@@ -1,4 +1,5 @@
 # RiskScoringModel
 Daniel Wu
-Evan Zhang1
+Evan Zhang
 Bryan Chiang
+Parin Timbadia
