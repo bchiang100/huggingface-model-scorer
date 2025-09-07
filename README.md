@@ -1,4 +1,4 @@
-# RiskScoringModel
+# huggingface-model-scorer
 Daniel Wu
 Evan Zhang
 Bryan Chiang
