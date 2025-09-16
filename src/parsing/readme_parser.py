@@ -41,6 +41,7 @@ class ReadmeParser:
             response = requests.get(readme_url, headers=headers, timeout=10)
             
             if response.status_code == 200:
+                # request successful
                 return response.text
             else:
                 # Try master branch instead of main (for repos older than 2020)
@@ -57,13 +58,13 @@ class ReadmeParser:
     def _fetch_github_readme(repo_path: str) -> Optional[str]:
         # Fetches README from GitHub raw files.
         try:
-            # Add authentication if token is available
+            # Add authentication if token is available (optional)
             headers = {}
             token = os.getenv('GITHUB_TOKEN')
             if token:
                 headers['Authorization'] = f"token {token}"
             
-            # Try different README variations and branches
+            # Different README naming conventions
             readme_variations = ['README.md', 'readme.md', 'Readme.md', 'README.MD', 'readme', 'README']
             branches = ['main', 'master']
             
