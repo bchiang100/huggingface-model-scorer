@@ -25,6 +25,7 @@ if __name__ == "__main__":
         ramp_up_scorer = RampUpScore(model)
         
         print(f"Ramp-up Score: {ramp_up_scorer.score:.3f}")
+        print(f"Latency: {ramp_up_scorer.latency} milliseconds")
         
         print("-" * 30)
     

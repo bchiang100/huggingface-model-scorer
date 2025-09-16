@@ -3,7 +3,7 @@
 
 # --------------------------------------Info--------------------------------------
 # Input: url_base Model object containing url
-# Output: Ramp-up score (0.0 to 1.0)
+# Output: Ramp-up score (0.0 to 1.0) and latency in milliseconds
 # Description: This script calculates a ramp-up score for a HuggingFace model based on documentation quality, 
 # instruction availability, and the types of dependencies used.
 # How to use: Instantiate RampUpScore with a Model object and access the "score" attribute. Instantiating the object will automatically calculate the score.
@@ -23,9 +23,11 @@ load_dotenv()
 class RampUpScore:
     def __init__(self, model: Model):
         self.model = model
+        self.latency = 0.0
         self.score = self._calculateScore()
 
     def _calculateScore(self) -> float:
+        start_time = time.time()
         try:
             model_id = self._extract_model_id()
             if not model_id:
@@ -41,9 +43,12 @@ class RampUpScore:
             if (ramp_up_score >= 0.5):
                 dependencies = self._analyze_dependencies(readme_content)
                 ramp_up_score += (dependencies * 0.1)
+
+            self.latency = int((time.time() - start_time) * 1000)
             return max(0, min(1.0, ramp_up_score))
             
         except Exception as e:
+            self.latency = int((time.time() - start_time) * 1000)
             return 0.0
             
     def _fetch_readme(self, model_id: str) -> Optional[str]:
