@@ -10,15 +10,10 @@
 #  ---------------------------------------------------------------------------------
 
 from src.parsing.url_base import Model
-import requests
+from src.parsing.readme_parser import ReadmeParser
 import time
-import os
 from typing import Optional
 
-# loads environemental variables from .env file to get user token (optional)
-# this allows access to gated and private models
-from dotenv import load_dotenv
-load_dotenv()
 
 class RampUpScore:
     def __init__(self, model: Model):
@@ -29,11 +24,7 @@ class RampUpScore:
     def _calculateScore(self) -> float:
         start_time = time.time()
         try:
-            model_id = self._extract_model_id()
-            if not model_id:
-                return 0.0
-                
-            readme_content = self._fetch_readme(model_id)
+            readme_content = ReadmeParser.fetch_readme(self.model.url)
             if not readme_content:
                 return 0.0
             
@@ -51,53 +42,7 @@ class RampUpScore:
             self.latency = int((time.time() - start_time) * 1000)
             return 0.0
             
-    def _fetch_readme(self, model_id: str) -> Optional[str]:
-        # Fetches README from raw files
-        try:
-            # Add authentication if token is available
-            headers = {}
-            token = os.getenv('HUGGINGFACE_TOKEN')
-            if token:
-                headers['Authorization'] = f"Bearer {token}"
-            # try main branch first
-            readme_url = f"https://huggingface.co/{model_id}/raw/main/README.md"
-            response = requests.get(readme_url, headers=headers, timeout=10)
-            
-            if response.status_code == 200:
-                return response.text
-            else:
-                # Try master branch instead of main (for repos older than 2020)
-                readme_url = f"https://huggingface.co/{model_id}/raw/master/README.md"
-                response = requests.get(readme_url, headers=headers, timeout=10)
-                if response.status_code == 200:
-                    return response.text
-                else:
-                    return None
-        except Exception as e:
-            return None
         
-    
-    def _extract_model_id(self) -> Optional[str]:
-        # extracts model ID from URL
-        url = self.model.url
-        if not url or "huggingface.co" not in url:
-            return None
-        
-        # Handles different URL formats
-        try:
-            parts = url.split("huggingface.co/")
-            if len(parts) > 1:
-                model_path = parts[1]
-                # Removes any trailing paths
-                model_path = model_path.split("/tree")[0]
-                model_path = model_path.split("/blob")[0]
-                model_path = model_path.rstrip("/")
-                return model_path
-        except Exception:
-            pass
-        
-        return None
-    
     def _analyze_instruction_quality(self, readme: str) -> float:
             # Calculates documentation quality based on installation keywords
             if not readme:
