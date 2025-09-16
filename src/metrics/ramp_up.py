@@ -1,38 +1,33 @@
-# run this when running as a standalone script:
-# PYTHONPATH=. python src/metrics/ramp_up.py
 
 # --------------------------------------Info--------------------------------------
-# Input: url_base Model object containing url
+# Input: README content as string
 # Output: Ramp-up score (0.0 to 1.0) and latency in milliseconds
-# Description: This script calculates a ramp-up score for a HuggingFace model based on documentation quality, 
+# Description: This script calculates a ramp-up score for an AI/ML model based on documentation quality, 
 # instruction availability, and the types of dependencies used.
-# How to use: Instantiate RampUpScore with a Model object and access the "score" attribute. Instantiating the object will automatically calculate the score.
+# How to use: Instantiate RampUpScore with README content and access the "score" attribute. Instantiating the object will automatically calculate the score.
 #  ---------------------------------------------------------------------------------
 
-from src.parsing.url_base import Model
-from src.parsing.readme_parser import ReadmeParser
 import time
 from typing import Optional
 
 
 class RampUpScore:
-    def __init__(self, model: Model):
-        self.model = model
+    def __init__(self, readme_content: Optional[str]):
+        self.readme_content = readme_content
         self.latency = 0.0
         self.score = self._calculateScore()
 
     def _calculateScore(self) -> float:
         start_time = time.time()
         try:
-            readme_content = ReadmeParser.fetch_readme(self.model.url)
-            if not readme_content:
+            if not self.readme_content:
                 return 0.0
             
-            doc_quality = self._analyze_documentation_quality(readme_content)
-            instr_quality = self._analyze_instruction_quality(readme_content)
+            doc_quality = self._analyze_documentation_quality(self.readme_content)
+            instr_quality = self._analyze_instruction_quality(self.readme_content)
             ramp_up_score = (doc_quality * 0.40) + (instr_quality * 0.60)
             if (ramp_up_score >= 0.5):
-                dependencies = self._analyze_dependencies(readme_content)
+                dependencies = self._analyze_dependencies(self.readme_content)
                 ramp_up_score += (dependencies * 0.1)
 
             self.latency = int((time.time() - start_time) * 1000)
