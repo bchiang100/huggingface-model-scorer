@@ -1,0 +1,31 @@
+# Run: python -m test.test_ramp_up
+
+from src.metrics.ramp_up import RampUpScore
+from src.parsing.url_base import Model
+
+if __name__ == "__main__":
+    # Test URLs
+    test_urls = [
+        "https://huggingface.co/jhu-clsp/mmBERT-base/blob/main/README.md", # excellent ramp up time
+        "https://huggingface.co/tencent/HunyuanImage-2.1", # very good ramp up time
+        "https://huggingface.co/openai/gpt-oss-120b/blob/main/README.md", # very good ramp up time
+        "https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest/blob/main/README.md", # okay ramp up time
+        "https://huggingface.co/Barytes/hellohf/blob/main/README.md" # poor ramp up time
+    ]
+    
+    print("Testing RampUpScore functionality...")
+    print("=" * 50)
+    
+    for url in test_urls:
+        print(f"\nTesting URL: {url}")
+        
+        model = Model(url)
+        
+        # Create RampUpScore instance (score is calculated automatically)
+        ramp_up_scorer = RampUpScore(model)
+        
+        print(f"Ramp-up Score: {ramp_up_scorer.score:.3f}")
+        
+        print("-" * 30)
+    
+    print("\nRampUpScore testing completed successfully!")
