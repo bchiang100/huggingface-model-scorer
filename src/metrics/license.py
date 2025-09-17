@@ -1,19 +1,24 @@
 from src.parsing.url_base import Site
 from huggingface_hub import HfApi
 import re
+import time
 
 class License:
-    def getLicense(self, site: Site) -> str:
+    def __init__(self, site: Site):
+        self.url = site.url
+        self.latency = 0.0
+        self.score = self._score()
+
+    def _getLicense(self) -> str:
         """
         Returns license extracted from HuggingFace API
         """
         # extract model_id from the site.url
         # Example: https://huggingface.co/google/gemma-3-270m/tree/main
         model_id = None
-        if hasattr(site, "url"):
-            match = re.search(r"huggingface\.co/([^/]+/[^/]+|[^/]+)", site.url)
-            if match:
-                model_id = match.group(1)
+        match = re.search(r"huggingface\.co/([^/]+/[^/]+|[^/]+)", self.url)
+        if match:
+            model_id = match.group(1)
         if not model_id:
             return None
         
@@ -41,12 +46,14 @@ class License:
         # print("license:", license)
         return license
     
-    def score(self, site: Site) -> float:
+    def _score(self) -> float:
         """
         Returns a license score (0-1) based on license clarity and permissiveness.
         """
-        license_name = self.getLicense(site)
+        start_time = time.time()
+        license_name = self._getLicense()
         if not license_name:
+            self.latency = int((time.time() - start_time) * 1000)
             return 0.0
 
         license = license_name.lower()
@@ -74,8 +81,10 @@ class License:
 
         for key, score in license_scores.items():
             if key in license:
+                self.latency = int((time.time() - start_time) * 1000)
                 return score
         
+        self.latency = int((time.time() - start_time) * 1000)
         return 0.0
     
 if __name__ == "__main__":
@@ -90,9 +99,10 @@ if __name__ == "__main__":
         def __init__(self, url):
             self.url = url
 
-    license_checker = License()
     for i, url in enumerate(example_url):
         site = DummySite(url)
-        print(f"Extracted license #{i+1}: {license_checker.getLicense(site)}")
-        print(f"Calculated score #{i+1}: {license_checker.score(site)}")
+        checker = License(site)
+        print(f"Extracted license #{i+1}: {checker._getLicense()}")
+        print(f"Calculated score #{i+1}: {checker.score}")
+        print(f"Calculated latency #{i+1}: {checker.latency}")
         print()
