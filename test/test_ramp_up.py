@@ -9,12 +9,11 @@ if __name__ == "__main__":
     test_urls = [
         "https://huggingface.co/jhu-clsp/mmBERT-base/blob/main/README.md", # excellent ramp up time
         "https://huggingface.co/tencent/HunyuanImage-2.1", # very good ramp up time
-        "https://huggingface.co/openai/gpt-oss-120b/blob/main/README.md", # very good ramp up time
-        "https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest/blob/main/README.md", # okay ramp up time
+        "https://github.com/MacPaw/OpenAI/blob/main/README.md", # github openai readme
+        "https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest/blob/main/README.md", # normal ramp up time
         "https://huggingface.co/Barytes/hellohf/blob/main/README.md" # poor ramp up time
     ]
     
-    print("Testing RampUpScore functionality...")
     print("=" * 50)
     
     for url in test_urls:
@@ -38,4 +37,4 @@ if __name__ == "__main__":
         
         print("-" * 30)
     
-    print("\nRampUpScore testing completed successfully!")
+    print("\nRampUpScore testing completed successfully")

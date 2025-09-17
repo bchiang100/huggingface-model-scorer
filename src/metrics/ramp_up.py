@@ -132,7 +132,7 @@ class RampUpScore:
             return min(1.0, score)
     
     def _analyze_documentation_quality(self, readme: str) -> float:
-        #Calculate documentation quality based on presence of key sections for readability
+        # Calculate documentation quality based on presence of key sections for readability
         if not readme:
             return 0.0
         readme_lower = readme.lower()
@@ -171,7 +171,7 @@ class RampUpScore:
         if has_code:
             score += 0.3
         
-        # Length check - not too short, not overwhelming (0-0.2 points)
+        # Length check (0-0.2 points)
         length = len(readme)
         if 5000 <= length <= 10000:
             score += 0.2
