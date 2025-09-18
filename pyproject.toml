@@ -1,0 +1,19 @@
+[project]
+name = "huggingface-model-scorer"
+version = "0.1.0"
+description = "risk metrics on model assets"
+authors = [
+    {name = "Evan Zhang", email = "zhan4453@purdue.edu"},
+    {name = "Parin Timbadia", email = "ptim@purdue.edu"},
+    {name = "Bryan Chiang", email = "bchiang@purdue.edu"},
+    {name = "Daniel Wu", email = "dwu@purdue.edu"},
+]
+readme = "README.md"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" =  "src"}
+packages = ["parsing", "parallel", "metrics"]

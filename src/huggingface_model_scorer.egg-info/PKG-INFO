@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: huggingface-model-scorer
+Version: 0.1.0
+Summary: risk metrics on model assets
+Author-email: Evan Zhang <zhan4453@purdue.edu>, Parin Timbadia <ptim@purdue.edu>, Bryan Chiang <bchiang@purdue.edu>, Daniel Wu <dwu@purdue.edu>
+Description-Content-Type: text/markdown
+
+# huggingface-model-scorer
+Daniel Wu
+Evan Zhang
+Bryan Chiang
+Parin Timbadia
