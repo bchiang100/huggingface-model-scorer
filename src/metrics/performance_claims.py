@@ -78,7 +78,7 @@ class PerformanceClaimsScore:
                 ],
                 "temperature": 0.1, # controls randomness in model's output
                 "max_tokens": 1000, # sets max number of tokens model can generate in response
-                "stream": False # gets full response at once
+                "stream": False # gets full response at once. do not print intermediate results
             }
             
             response = requests.post(url, headers=headers, json=body)
@@ -133,7 +133,7 @@ Respond in this exact JSON format. Do not deviate from this format. Do not retur
             score = (
                 float(analysis.get('benchmark_presence', 0)) * 0.40 + float(analysis.get('benchmark_quality', 0)) * 0.30 + float(analysis.get('score_credibility', 0)) * 0.20 + float(analysis.get('reproducibility', 0)) * 0.10
             )
-            
+ 
             return score
             
         except Exception:
