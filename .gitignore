@@ -5,3 +5,5 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+**/*.egg_info/
+src/huggingface_model_scorer.egg-info/
