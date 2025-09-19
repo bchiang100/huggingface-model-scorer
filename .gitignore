@@ -1,9 +1,6 @@
 config.env
 .env
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 .Python
-**/*.egg_info/
-src/huggingface_model_scorer.egg-info/
+*.egg-info/
