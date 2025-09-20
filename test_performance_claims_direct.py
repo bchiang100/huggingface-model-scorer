@@ -1,8 +1,13 @@
-# Run: python3 -m test.test_performance_claims
-# Run: pip install -e if in venv
+# Run: python3 test_performance_claims_direct.py
+# Direct test that bypasses import issues
 
-from src.metrics.performance_claims import PerformanceClaimsScore
-from src.parsing.url_base import Model
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+# Import directly to avoid __init__.py issues
+from metrics.performance_claims import PerformanceClaimsScore
+from parsing.url_base import Model
 import time
 
 if __name__ == "__main__":

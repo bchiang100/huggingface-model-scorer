@@ -16,19 +16,18 @@ import os
 import json
 import re
 from typing import Optional, Dict, Any
+from .metrics_base import *
 
 import requests
 
 from dotenv import load_dotenv
 load_dotenv()
 
-class PerformanceClaimsScore:
-    def __init__(self, readme_content: Optional[str]):
-        self.readme_content = readme_content
-        self.latency = 0.0
+class PerformanceClaimsScore(Metric):
+    def __init__(self, asset):
+        super().__init__(asset)
         self.llm_analysis: Optional[Dict[str, Any]] = None
         self.api_key = None
-        self.score = self._calculateScore()
         
     def _setup_purdue_genai(self) -> bool:
         # setup environment variable for PurdueGenAI Studio API key
@@ -39,10 +38,12 @@ class PerformanceClaimsScore:
         self.api_key = api_key
         return True
 
-    def _calculateScore(self) -> float:
+    def calculate(self) -> float:
         start_time = time.time()
         try:
-            if not self.readme_content:
+            # Get README content from the asset
+            readme_content = self._get_readme_content()
+            if not readme_content:
                 self.latency = int((time.time() - start_time) * 1000)
                 return 0.0
             
@@ -50,14 +51,34 @@ class PerformanceClaimsScore:
             if not self._setup_purdue_genai():
                 raise ValueError("PurdueGenAI Studio API key not found. Set PURDUE_GENAI_API_KEY environment variable.")
                 
-            performance_score = self._analyze_with_llm(self.readme_content)
+            performance_score = self._analyze_with_llm(readme_content)
 
             self.latency = int((time.time() - start_time) * 1000)
-            return max(0.0, min(1.0, performance_score))
+            self.score = max(0.0, min(1.0, performance_score))
+            return self.score
             
         except Exception:
             self.latency = int((time.time() - start_time) * 1000)
             raise
+            
+    def _get_readme_content(self) -> Optional[str]:
+        """
+        Fetch README content from the model repository
+        """
+        try:
+            if self.asset_type.__name__ != 'Model':
+                return None
+                
+            # For HuggingFace models, try to get README from model card
+            if 'huggingface.co' in self.url:
+                readme_url = f"{self.url}/raw/main/README.md"
+                response = requests.get(readme_url)
+                if response.status_code == 200:
+                    return response.text
+            
+            return None
+        except Exception:
+            return None
 
     def _analyze_with_llm(self, readme: str) -> float:
         try:  
