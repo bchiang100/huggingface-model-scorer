@@ -26,3 +26,10 @@ wheels/
 *.pyc
 *.pyo
 *.pyd
+
+*.env
+env/
+__pycache__/
+*.py[cod]
+.Python
+*.egg-info/
