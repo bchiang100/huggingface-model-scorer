@@ -69,7 +69,7 @@ class RampUpScore(Metric):
                 "quickstart": 0.2,
                 "setup": 0.15,
                 "getting started": 0.12,
-                "just getting started": 0.0,
+                "just getting started": 0.12,
                 "install": 0.1,
                 "dependencies": 0.08,
                 "how to install": 0.06,
