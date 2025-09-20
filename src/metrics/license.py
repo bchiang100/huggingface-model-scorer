@@ -1,14 +1,10 @@
-from src.parsing.url_base import Site
+from metrics.metrics_base import *
+from parsing.url_base import Site
 from huggingface_hub import HfApi
 import re
 import time
 
-class License:
-    def __init__(self, site: Site):
-        self.url = site.url
-        self.latency = 0.0
-        self.score = self._score()
-
+class License(Metric):
     def _getLicense(self) -> str:
         """
         Returns license extracted from HuggingFace API
@@ -46,7 +42,7 @@ class License:
         # print("license:", license)
         return license
     
-    def _score(self) -> float:
+    def calculate(self) -> float:
         """
         Returns a license score (0-1) based on license clarity and permissiveness.
         """
@@ -82,27 +78,10 @@ class License:
         for key, score in license_scores.items():
             if key in license:
                 self.latency = int((time.time() - start_time) * 1000)
+                self.score = score
                 return score
         
         self.latency = int((time.time() - start_time) * 1000)
+        self.score = 0.0
         return 0.0
     
-if __name__ == "__main__":
-    # Example HuggingFace model URLs
-    example_url = [
-        "https://huggingface.co/google/gemma-3-270m/tree/main",
-        "https://huggingface.co/timm/mobilenetv3_small_100.lamb_in1k",
-        "https://huggingface.co/tencent/SRPO"
-    ]
-    
-    class DummySite:
-        def __init__(self, url):
-            self.url = url
-
-    for i, url in enumerate(example_url):
-        site = DummySite(url)
-        checker = License(site)
-        print(f"Extracted license #{i+1}: {checker._getLicense()}")
-        print(f"Calculated score #{i+1}: {checker.score}")
-        print(f"Calculated latency #{i+1}: {checker.latency}")
-        print()
