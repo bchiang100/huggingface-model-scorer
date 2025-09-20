@@ -9,34 +9,50 @@
 
 import time
 from typing import Optional
+from .metrics_base import *
 
-
-class RampUpScore:
-    def __init__(self, readme_content: Optional[str]):
-        self.readme_content = readme_content
-        self.latency = 0.0
-        self.score = self._calculateScore()
-
-    def _calculateScore(self) -> float:
+class RampUpScore(Metric):
+    def calculate(self) -> float:
         start_time = time.time()
         try:
-            if not self.readme_content:
+            # Get README content from the asset
+            readme_content = self._get_readme_content()
+            if not readme_content:
+                self.latency = int((time.time() - start_time) * 1000)
                 return 0.0
             
-            doc_quality = self._analyze_documentation_quality(self.readme_content)
-            instr_quality = self._analyze_instruction_quality(self.readme_content)
+            doc_quality = self._analyze_documentation_quality(readme_content)
+            instr_quality = self._analyze_instruction_quality(readme_content)
             ramp_up_score = (doc_quality * 0.40) + (instr_quality * 0.60)
             if (ramp_up_score >= 0.5):
-                dependencies = self._analyze_dependencies(self.readme_content)
+                dependencies = self._analyze_dependencies(readme_content)
                 ramp_up_score += (dependencies * 0.1)
 
             self.latency = int((time.time() - start_time) * 1000)
-            return max(0, min(1.0, ramp_up_score))
+            self.score = max(0, min(1.0, ramp_up_score))
+            return self.score
             
-        except Exception as e:
+        except Exception:
             self.latency = int((time.time() - start_time) * 1000)
             return 0.0
             
+    def _get_readme_content(self) -> Optional[str]:
+        """
+        Fetch README content from the model repository
+        """
+        try:
+            # For HuggingFace models, try to get README from model card
+            if 'huggingface.co' in self.url:
+                readme_url = f"{self.url}/raw/main/README.md"
+                import requests
+                response = requests.get(readme_url)
+                if response.status_code == 200:
+                    return response.text
+            
+            return None
+        except Exception:
+            return None
+        
         
     def _analyze_instruction_quality(self, readme: str) -> float:
             # Calculates documentation quality based on installation keywords
