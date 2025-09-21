@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from parsing.url_base import *
+from ..parsing.url_base import *
 import urllib.parse
 
 
