@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
+
 from parsing.url_base import *
 import urllib.parse
 
 
 class Metric(ABC):
     def __init__(self, asset):
+
         self.asset: Site = asset
 
     @property
