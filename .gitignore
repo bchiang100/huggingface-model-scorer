@@ -31,5 +31,9 @@ wheels/
 env/
 __pycache__/
 *.py[cod]
+*.pyc
+*.pyo
+*.pyd
 .Python
 *.egg-info/
+LLM_SETUP.md
