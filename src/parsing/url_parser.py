@@ -1,5 +1,5 @@
 import os
-from parsing.url_base import *
+from .url_base import *
 import regex as re
 
 class UrlParser():

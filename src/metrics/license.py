@@ -1,5 +1,5 @@
-from metrics.metrics_base import *
-from parsing.url_base import Site
+from .metrics_base import *
+from ..parsing.url_base import Site
 from huggingface_hub import HfApi
 import re
 import time
