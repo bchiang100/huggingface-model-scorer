@@ -6,6 +6,8 @@ import urllib.parse
 class Metric(ABC):
     def __init__(self, asset):
         self.asset: Site = asset
+        self.latency: float = 0.0
+        self.score: float = 0.0
 
     @property
     def url(self):
