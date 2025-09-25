@@ -3,7 +3,7 @@ from parsing.url_base import *
 import urllib.parse
 
 
-class Metric(ABC):
+class MetricBase(ABC):
     '''
     Metrics can expect that it will only run on Site objects (Model, Dataset, Codebase)
 
@@ -17,6 +17,7 @@ class Metric(ABC):
         self.score: float = 0.0
         self.owner: str = ""
         self.asset_id: str = ""
+        self.api_endpoint
 
     @property
     def url(self):
@@ -44,7 +45,7 @@ class Metric(ABC):
                 parsed_url = urllib.parse.urlparse(self.url)
                 path_parts = parsed_url.path.strip('/').split('/')
                 if len(path_parts) >= 2:
-                    owner, dataset = path_parts[0], path_parts[1]
+                    owner, dataset = path_parts[1], path_parts[2]
                     self.owner = owner
                     self.asset_id = dataset
                     return f"https://huggingface.co/api/datasets/{owner}/{dataset}"
@@ -66,6 +67,7 @@ class Metric(ABC):
         else:
             raise ValueError("Unsupported asset type for API endpoint extraction.")
 
+    @staticmethod
     @abstractmethod
     def calculate(self):
         '''

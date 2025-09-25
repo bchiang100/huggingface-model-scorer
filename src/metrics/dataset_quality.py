@@ -1,10 +1,13 @@
 from parsing.url_base import *
-from metrics.metrics_base import *
+from metrics.base import *
+from contextlib import contextmanager
+from datasets import load_dataset
+from itertools import islice
 import pandas as pd
 import requests
 import regex as re
 
-class DatasetQualityMetric(Metric):
+class DatasetQualityMetric(MetricBase):
     def calculate(self) -> float:
         '''
         Calculate implementation of the dataset quality metric
@@ -31,10 +34,11 @@ class DatasetQualityMetric(Metric):
         return True
 
     def _fetch_dataset(self) -> pd.DataFrame:
-        r = requests.get(self.api_endpoint + '/data')
-        r.raise_for_status()
-        data = r.json()
-        df = pd.read_json(data)
+        data = load_dataset(f"{self.owner}/{self.asset_id}", split="train", streaming=True)
+        data_list = list(islice(data, 10000))
+        if not data_list:
+            return pd.DataFrame
+        df = pd.DataFrame.from_records(data_list)
         return df
     
     def _analyze_dataset(self, df: pd.DataFrame) -> float:
@@ -97,3 +101,8 @@ class DatasetQualityMetric(Metric):
             lc_score -= 0.5
 
         return max(lc_score, 0.0)
+    
+if __name__ == "__main__":
+    d = Dataset("https://huggingface.co/datasets/xlangai/AgentNet")
+    dq = DatasetQualityMetric(d)
+    print(dq.calculate())

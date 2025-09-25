@@ -1,10 +1,10 @@
-from metrics.metrics_base import *
+from metrics.base import *
 from parsing.url_base import Site
 from huggingface_hub import HfApi
 import re
 import time
 
-class License(Metric):
+class License(MetricBase):
     def _getLicense(self) -> str:
         """
         Returns license extracted from HuggingFace API

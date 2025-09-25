@@ -1,13 +1,13 @@
-from metrics.metrics_base import *
+from metrics.base import *
 from parsing.url_base import Model
 import numpy as np
 import requests
 import urllib.parse
 
 from dotenv import load_dotenv
-# load_dotenv()
+load_dotenv()
 
-class BusFactorMetric(Metric):
+class BusFactorMetric(MetricBase):
     def calculate(self) -> float:
         '''
         Calculate implementation of the bus factor metric
