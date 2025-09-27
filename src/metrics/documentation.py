@@ -39,7 +39,7 @@ class Documentation(Metric):
             # print(f"DEBUG: LLM extracted documentation score: {result['documentation_score']}")
             # # print(f"DEBUG: LLM extracted category scores: {result['category_scores']}")
             # print(f"DEBUG: LLM extracted confidence: {result['confidence']}")
-            print(f"DEBUG: LLM extracted rationale: {result['rationale']}")
+            # print(f"DEBUG: LLM extracted rationale: {result['rationale']}")
             
         except Exception as e:
             print(f"Error extracting documentation score from README: {e}")
