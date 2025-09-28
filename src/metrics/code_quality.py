@@ -2,7 +2,7 @@
 # Input: Repository URL
 # Output: Code quality score (0.0 to 1.0) and latency in milliseconds
 # Description: Calculates code quality score for a repository based on function length, code style compliance using flake8, and repository recency (time from last commit).
-# How to use: Instantiate CodeQuality with an asset and call calculate() method. Make sure to install GitPython dependency (pip3 install GitPython)
+# How to use: Instantiate CodeQuality with an asset. Make sure to install GitPython dependency (pip3 install GitPython)
 #  ---------------------------------------------------------------------------------
 
 import ast
@@ -58,8 +58,13 @@ class CodeQuality(Metric):
     def _clone_repository(self, repo_url: str, temp_dir: str) -> Repo:
         # clone repo using GitPython library
         try:
-            return Repo.clone_from(repo_url, temp_dir, depth=25) # checks 25 of the most recent commits
+            return Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True, branch='main') # main branch
         except git.exc.GitCommandError:
+            try:
+                return Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True, branch='master') # fallback to master
+            except git.exc.GitCommandError:
+                return Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True)
+        except Exception:
             raise ValueError(f"Failed to clone repository: {repo_url}")
 
     def _analyze_function_lengths(self, repo_path: str) -> float:
@@ -87,8 +92,8 @@ class CodeQuality(Metric):
 
             except (SyntaxError, UnicodeDecodeError, FileNotFoundError):
                 continue
-        
-        # neutral score (no functions detected)
+
+        # neutral score if no functions are detected
         if total_functions == 0:
             return 0.5
 
@@ -97,15 +102,13 @@ class CodeQuality(Metric):
 
     def _analyze_code_style(self, repo_path: str) -> tuple:
         # Returns tuple of (style_score, violation_count)
-        
+
         try:
             result = subprocess.run(
-                # -- count outputs the number of violations
-                # -- statistics output group violations by type and shows counts
-                ['flake8', repo_path, '--count', '--statistics'],
+                ['flake8', repo_path, '--count', '--statistics', '--max-line-length=100', '--ignore=E501,W503,E203'],
                 capture_output = True,
                 text = True,
-                timeout = 30
+                timeout = 10
             )
 
             violations = 0
@@ -117,7 +120,7 @@ class CodeQuality(Metric):
 
             total_lines = self._count_python_lines(repo_path)
 
-            # neutral score if no lines detected (can't judge code if there's no score)
+            # neutral score if no lines detected
             if total_lines == 0:
                 return 0.5, violations
 
@@ -147,7 +150,6 @@ class CodeQuality(Metric):
 
             return recency_score, days_old
 
-        # error handling for when Git repository analysis fails
         except Exception:
             return 0.1, 999 # low score, very old
 
