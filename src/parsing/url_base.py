@@ -9,6 +9,7 @@ Metric imports
 # from metrics.dataset_quality import DatasetQualityMetric
 # from metrics.busfactor import BusFactorMetric
 # from metrics.license import License
+# from parallel import *
 
 class Site(ABC):
     '''
