@@ -3,11 +3,13 @@ from parsing.url_base import Model
 import numpy as np
 import requests
 import urllib.parse
+import time
+import logging
 
 from dotenv import load_dotenv
 load_dotenv()
 
-class BusFactorMetric(MetricBase):
+class BusFactorMetric(Metric):
     def calculate(self) -> float:
         '''
         Calculate implementation of the bus factor metric
@@ -15,8 +17,12 @@ class BusFactorMetric(MetricBase):
 
         Returns a float between 0 and 1, where 0 is low risk (many contributors) and 1 is high risk (few contributors)
         '''
+        start_time = time.perf_counter()
         commit_map = self._get_commit_map()
-        return self._distribution_function(commit_map)
+        r = self._distribution_function(commit_map)
+        self.latency = (time.perf_counter() - start_time) * 1000
+        self.score = r
+        return r
 
     def _get_commit_map(self) -> dict: 
         commits = dict()
@@ -67,5 +73,7 @@ class BusFactorMetric(MetricBase):
 if __name__ == "__main__":
     m = Codebase("https://github.com/bchiang100/huggingface-model-scorer")
     bfm = BusFactorMetric(m)
-    print(bfm.calculate())
+    bfm.calculate()
+    print(bfm.score)
+    print(bfm.latency)
     # print(bfm.asset_type)

@@ -3,7 +3,7 @@ from parsing.url_base import *
 import urllib.parse
 
 
-class MetricBase(ABC):
+class Metric(ABC):
     '''
     Metrics can expect that it will only run on Site objects (Model, Dataset, Codebase)
 

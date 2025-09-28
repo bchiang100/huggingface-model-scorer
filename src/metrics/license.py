@@ -4,7 +4,7 @@ from huggingface_hub import HfApi
 import re
 import time
 
-class License(MetricBase):
+class License(Metric):
     def _getLicense(self) -> str:
         """
         Returns license extracted from HuggingFace API

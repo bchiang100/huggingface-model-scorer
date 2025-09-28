@@ -6,8 +6,10 @@ from itertools import islice
 import pandas as pd
 import requests
 import regex as re
+import time
+import logging
 
-class DatasetQualityMetric(MetricBase):
+class DatasetQualityMetric(Metric):
     def calculate(self) -> float:
         '''
         Calculate implementation of the dataset quality metric
@@ -23,8 +25,12 @@ class DatasetQualityMetric(MetricBase):
 
         Returns a float between 0 and 1, where 0 is low quality and 1 is high quality
         '''
+        start_time = time.perf_counter()
         self._validate_input()
-        return self._analyze_dataset(self._fetch_dataset())
+        r = self._analyze_dataset(self._fetch_dataset())
+        self.latency = (time.perf_counter() - start_time) * 1000
+        self.score = r
+        return r
 
     def _validate_input(self) -> bool:
         if self.asset_type != Dataset:
@@ -48,10 +54,10 @@ class DatasetQualityMetric(MetricBase):
         Variety of features will have a weight of 0.20
         Label consistency will have a weight of 0.20
         '''
-        size_score = min(len(df) / 10000, 1.0) * 0.35  # Assuming 10,000 rows is excellent
+        size_score = min(len(df) / 10000, 1.0) * 0.35           # Assuming 10,000 rows is excellent
         missing_score = (1 - df.isnull().mean().mean()) * 0.25  # Average missing value percentage
-        variety_score = min(len(df.columns) / 50, 1.0) * 0.20  # Assuming 50 features is excellent
-        label_score = self._label_consistency(df) * 0.20  # Custom function to evaluate label consistency
+        variety_score = min(len(df.columns) / 50, 1.0) * 0.20   # Assuming 50 features is excellent
+        label_score = self._label_consistency(df) * 0.20        # Custom function to evaluate label consistency
         total_score = size_score + missing_score + variety_score + label_score
         self.socore = total_score
         return total_score
@@ -105,4 +111,6 @@ class DatasetQualityMetric(MetricBase):
 if __name__ == "__main__":
     d = Dataset("https://huggingface.co/datasets/xlangai/AgentNet")
     dq = DatasetQualityMetric(d)
-    print(dq.calculate())
+    dq.calculate()
+    print(dq.score)
+    print(dq.latency)
