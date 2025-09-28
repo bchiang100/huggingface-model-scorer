@@ -1,3 +1,6 @@
+from metrics.base import *
+from parsing.url_base import Site
+from huggingface_hub import HfApi
 # --------------------------------------Info--------------------------------------
 # Input: Model object with URL attribute
 # Output: License score (0.0 to 1.0) and latency in milliseconds
@@ -10,7 +13,6 @@
 # 3. Access the "score" attribute for the calculated score (0.0-1.0)
 # 4. Use provided DEBUG print statements to track LLM output
 #  ---------------------------------------------------------------------------------
-
 import re
 import os
 import requests
