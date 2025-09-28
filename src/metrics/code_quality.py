@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 import git
 from git import Repo
-from .metrics_base import Metric
+from metrics.metrics_base import Metric
 
 
 class CodeQuality(Metric):
