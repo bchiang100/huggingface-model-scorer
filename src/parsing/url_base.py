@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Optional
+# Removed circular import - metrics modules should import from parsing, not vice versa
+# from parallel import *
 
-
-'''
-    Site is a basic template that must contain a url
-'''
 class Site(ABC):
+    '''
+        Base class for all assets (Model, Dataset, Codebase)
+    '''
     def __init__ (self, url):
         self.url: str = url
 
@@ -13,20 +14,19 @@ class Site(ABC):
     def run_metrics(self):
         pass
 
-'''
-    Model inherits the url field from Site
-'''
 
 class Model(Site):
+    '''
+        Model inherits the url field from Site
+    '''
     def run_metrics(self):
         print(self.url)
 
-'''
-    Dataset inherits the url field from Site
-    Dataset also has an internal property that automatically infers if a dataset is shared betweena model asset group
-'''
-
 class Dataset(Site):
+    '''
+        Dataset inherits the url field from Site
+        Dataset also has an internal property that automatically infers if a dataset is shared betweena model asset group
+    ''' 
     @property
     def url(self):
         return self._url
@@ -42,8 +42,11 @@ class Dataset(Site):
         #return 
 
     def run_metrics(self):
+        dataset_quality.DataSetQualityMetric(self).calculate()
+                
+class Codebase(Site):
+    def run_metrics(self):
         print(self.url)
-
 '''
     Codebase inherits the url field from Site
 '''
