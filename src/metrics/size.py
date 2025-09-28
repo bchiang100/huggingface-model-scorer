@@ -1,7 +1,7 @@
 from typing import Dict, Literal
 from huggingface_hub import HfApi, ModelInfo
 import time
-from .metrics_base import *
+from metrics.base import *
 
 HardwareType = Literal["jetson_nano", "raspberry_pi", "desktop_pc", "aws_server"]
 

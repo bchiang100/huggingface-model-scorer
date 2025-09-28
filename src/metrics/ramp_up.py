@@ -9,7 +9,7 @@
 
 import time
 from typing import Optional
-from metrics.metrics_base import *
+from metrics.base import *
 
 class RampUpScore(Metric):
     def calculate(self) -> float:

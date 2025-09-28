@@ -2,7 +2,7 @@ import re
 import os
 import requests
 
-from .metrics_base import *
+from metrics.base import *
 from parsing.readme_parser import ReadmeParser
 from typing import Dict, Any
 
