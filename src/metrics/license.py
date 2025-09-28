@@ -16,8 +16,6 @@ from huggingface_hub import HfApi
 import re
 import os
 import requests
-
-from metrics.metrics_base import *
 from parsing.readme_parser import ReadmeParser
 from typing import Dict, Any
 
