@@ -1,4 +1,3 @@
-
 # Run: PYTHONPATH=src python3 test/test_code_quality.py 
 from metrics.code_quality import CodeQuality
 
