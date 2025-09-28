@@ -3,8 +3,8 @@
 # Output: License score (0.0 to 1.0) and latency in milliseconds
 # Description: This script calculates a license score using README content, with a fallback
 # analysis using data from the model card.
-# 
-# How to use: 
+#
+# How to use:
 # 1. Set PURDUE_GENAI_API_KEY environment variable with your PurdueGenAI Studio API key in .env file
 # 2. Instantiate License with a Model object (containing Model URL)
 # 3. Access the "score" attribute for the calculated score (0.0-1.0)
@@ -15,8 +15,8 @@ import re
 import os
 import requests
 
-from .metrics_base import *
-from ..parsing.readme_parser import ReadmeParser
+from metrics.metrics_base import *
+from parsing.readme_parser import ReadmeParser
 from typing import Dict, Any
 
 class License(Metric):

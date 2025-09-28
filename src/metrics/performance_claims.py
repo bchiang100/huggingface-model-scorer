@@ -16,7 +16,7 @@ import os
 import json
 import re
 from typing import Optional, Dict, Any
-from .metrics_base import *
+from metrics.metrics_base import *
 
 import requests
 

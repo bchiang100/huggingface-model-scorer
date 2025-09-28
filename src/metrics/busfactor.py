@@ -1,5 +1,5 @@
-from .metrics_base import *
-from ..parsing.url_base import Model
+from metrics.metrics_base import *
+from parsing.url_base import Model
 import numpy as np
 import requests
 import urllib.parse
