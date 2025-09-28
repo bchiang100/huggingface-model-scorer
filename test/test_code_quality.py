@@ -1,5 +1,6 @@
 
-# Run: PYTHONPATH=src python3 test/test_code_quality.py 
+# Run: PYTHONPATH=src python3 test/test_code_quality.py
+# Optional: Add GITHUB_TOKEN=your_token to .env file for API features
 from metrics.code_quality import CodeQuality
 
 
@@ -8,8 +9,16 @@ def test_code_quality():
 
     test_repos = [
         "https://github.com/huggingface/transformers.git",
+        "https://github.com/openai/whisper.git",
+        "https://github.com/microsoft/DialoGPT.git",
         "https://github.com/pytorch/pytorch.git",
-        "https://github.com/tensorflow/tensorflow.git"
+        "https://github.com/tensorflow/tensorflow.git",
+        "https://github.com/scikit-learn/scikit-learn.git",
+        "https://github.com/requests/requests.git",
+        "https://github.com/pallets/flask.git",
+        "https://github.com/psf/black.git",
+        "https://github.com/huggingface/datasets.git",
+        "https://github.com/gradio-app/gradio.git"
     ]
 
     print("Testing Code Quality Analyzer")
@@ -24,12 +33,13 @@ def test_code_quality():
 
             print(f"  Code Quality Score: {score:.3f}")
             print(f"  Latency: {analyzer.latency}ms")
-            print(f"  Function Length Score: {analyzer.function_length_score:.3f}")
-            print(f"  Style Score: {analyzer.style_score:.3f}")
-            print(f"  Recency Score: {analyzer.recency_score:.3f}")
-            print(f"  Total Functions: {analyzer.total_functions}")
-            print(f"  Style Violations: {analyzer.style_violations}")
-            print(f"  Days Since Last Commit: {analyzer.days_since_last_commit}")
+            if hasattr(analyzer, 'function_length_score'):
+                print(f"  Function Length Score: {analyzer.function_length_score:.3f}")
+                print(f"  Style Score: {analyzer.style_score:.3f}")
+                print(f"  Recency Score: {analyzer.recency_score:.3f}")
+                print(f"  Total Functions: {analyzer.total_functions}")
+                print(f"  Style Violations: {analyzer.style_violations}")
+                print(f"  Days Since Last Commit: {analyzer.days_since_last_commit}")
 
         except Exception as e:
             print(f"  Error: {e}")
