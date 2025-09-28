@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Optional
-# Removed circular import - metrics modules should import from parsing, not vice versa
 # from parallel import *
 
 class Site(ABC):
