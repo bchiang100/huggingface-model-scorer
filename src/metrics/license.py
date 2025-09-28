@@ -1,6 +1,3 @@
-from metrics.base import *
-from parsing.url_base import Site
-from huggingface_hub import HfApi
 # --------------------------------------Info--------------------------------------
 # Input: Model object with URL attribute
 # Output: License score (0.0 to 1.0) and latency in milliseconds
@@ -18,6 +15,9 @@ import os
 import requests
 from parsing.readme_parser import ReadmeParser
 from typing import Dict, Any
+from metrics.base import *
+from parsing.url_base import Site
+from huggingface_hub import HfApi
 
 class License(Metric):
     def __init__(self, asset):
