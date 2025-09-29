@@ -1,7 +1,7 @@
 from parsing.url_base import *
 from metrics.base import *
 from contextlib import contextmanager
-from datasets import load_dataset
+from datasets import load_dataset, get_dataset_config_names
 from itertools import islice
 import pandas as pd
 import requests
@@ -40,8 +40,22 @@ class DatasetQualityMetric(Metric):
         return True
 
     def _fetch_dataset(self) -> pd.DataFrame:
-        data = load_dataset(f"{self.owner}/{self.asset_id}", split="train", streaming=True)
-        data_list = list(islice(data, 10000))
+        try:
+                # Check available configs
+            configs = get_dataset_config_names(f"{self.owner}/{self.asset_id}")
+            if configs:
+                # Prefer the requested config if available
+                config_to_use = 'en' if 'en' in configs else configs[0]
+                print(f"Using config: {config_to_use}")
+                ds = load_dataset(f"{self.owner}/{self.asset_id}", config_to_use, split = "train", streaming=True)
+            else:
+                # No configs available
+                print("No configs available, loading default dataset")
+                ds = load_dataset(f"{self.owner}/{self.asset_id}", split = "train",streaming=True)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load dataset '{f"{self.owner}/{self.asset_id}"}': {e}")
+
+        data_list = list(islice(ds, 10000))
         if not data_list:
             return pd.DataFrame
         df = pd.DataFrame.from_records(data_list)
@@ -71,17 +85,18 @@ class DatasetQualityMetric(Metric):
         '''
         
         lc_score = 1.0
-        label_columns = [col for col in df.columns if 'label' in col.lower() or 'target' in col.lower()]
+        print(df)
+        label_columns = [col for col in df.columns]
         if not label_columns:
-            return 0 # no labels found
+            return 0                    # no labels found
         
         for l in label_columns:
-            if df[l].type == 'object': # objects are mixed columns
+            if df[l].dtype == 'object': # objects are mixed columns
                 types = dict()
                 for x in df[l]:
                     types[type(x)] = types.get(type(x), 0) + 1
-                if len(types) > 3: # more than 3 types is bad
-                    lc_score -= 0.5
+                if len(types) > 3:      # more than 3 types is bad
+                    lc_score -= 0.3333 * (len(types) - 3) / len(types)
         
         naming_conventions = {
             'snake_case': re.compile(r'^[a-z]+(_[a-z]+)*$'),
@@ -104,12 +119,16 @@ class DatasetQualityMetric(Metric):
                 conventions['other'] = conventions.get('other', 0) + 1
         
         if len(conventions) > 2:
-            lc_score -= 0.5
+            lc_score -= 0.3333 * (len(conventions) - 2) / len(conventions)
+
+        if pct_msg := df.isnull().sum().sum() / (df.shape[0] * df.shape[1]) > 0.35:
+            lc_score -= 0.3333 * (pct_msg - 0.35) / 0.65                    # penalize if more than 35% missing values
 
         return max(lc_score, 0.0)
     
 if __name__ == "__main__":
     d = Dataset("https://huggingface.co/datasets/xlangai/AgentNet")
+    # d = Dataset("https://huggingface.co/datasets/allenai/c4")
     dq = DatasetQualityMetric(d)
     dq.calculate()
     print(dq.score)

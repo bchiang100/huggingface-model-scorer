@@ -55,14 +55,14 @@ class Site(ABC):
             raise ValueError("Unsupported asset type for API endpoint extraction.")
         
     @abstractmethod
-    def run_metrics(self):
+    def run_metrics(self) -> None:
         pass
 
 class Model(Site):
     '''
         Model inherits the url field from Site
     '''
-    def run_metrics(self):
+    def run_metrics(self) -> None:
         print(self.url)
 
 class Dataset(Site):
@@ -71,14 +71,15 @@ class Dataset(Site):
         Dataset also has an internal property that automatically infers if a dataset is shared between a model asset group
     ''' 
     @property
-    def url(self):
+    def url(self) -> str:
         return self._url
 
     @url.setter
-    def url(self, new_url):
+    def url(self, new_url:Optional[str]) -> None:
         if not new_url:
             new_url = self._infer_shared()
         self._url = new_url
+        return new_url
 
     def run_metrics(self):
         # DatasetQualityMetric().calculate()
@@ -106,6 +107,9 @@ class ModelAssets():
         self.codebase: Codebase = codebase
         self.registry: managers.DictProxy = registry
 
+        if dataset != None or dataset.url != "":
+            self._register_dataset()
+
     @property
     def dataset(self):
         return self._dataset
@@ -117,15 +121,13 @@ class ModelAssets():
         else:
             return self._infer_shared_dataset(self._dataset)
 
-    def _register_dataset(self):
+    def _register_dataset(self) -> None:
         registry = self.registry
         if dataset := self.dataset.asset_id != "":
             registry[dataset] = 1
-        else:
-            registry[dataset] = None
         self.registry = registry
 
-    def _infer_shared_dataset(self):
+    def _infer_shared_dataset(self) -> Optional[Dataset]:
         '''
         First, read the huggingface api's metadata to determine the dataset, 
         if not found, attempt a to scan the readme for it
@@ -137,13 +139,13 @@ class ModelAssets():
         else:
             return self._read_hf_readme()
         
-    def _read_hf_metadat(self):
+    def _read_hf_metadat(self) -> Optional[str]:
         '''
         Returns a URL or a None only
         '''
         pass
     
-    def _read_hf_readme(self):
+    def _read_hf_readme(self) -> Optional[str]: 
         '''
         Returns a URL or a None 
         '''

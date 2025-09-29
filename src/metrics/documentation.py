@@ -84,7 +84,7 @@ class Documentation(Metric):
             return self._parse_llm_response(analysis_text)
             
         except Exception as e:
-            raise RuntimeError(f"LLM analysis failed: {str(e)}")
+            print(f"LLM analysis failed: {str(e)}")
         
     def _create_prompt(self, readme: str) -> str:  
         return f"""
