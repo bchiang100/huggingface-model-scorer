@@ -101,25 +101,25 @@ class ModelAssets():
     '''
         ModelAssets ensures canonicity between links
     '''
-    def __init__(self, model: Model, dataset: Dataset, codebase:Codebase, registry: managers.DictProxy):
+    def __init__(self, model: Model, dataset: Dataset, codebase:Codebase):
         self.model: Model =  model
-        self._dataset: Dataset = dataset
+        self.dataset: Dataset = dataset
         self.codebase: Codebase = codebase
-        self.registry: managers.DictProxy = registry
+        # self.registry: managers.DictProxy = registry
 
-        if dataset != None or dataset.url != "":
-            self._register_dataset()
+        # if dataset != None or dataset.url != "":
+        #     self._register_dataset()
 
-    @property
-    def dataset(self):
-        return self._dataset
+    # @property
+    # def dataset(self):
+    #     return self._dataset
 
-    @dataset.setter
-    def dataset(self):
-        if self._dataset.url != "" or self._dataset != None:
-            return self._dataset
-        else:
-            return self._infer_shared_dataset(self._dataset)
+    # @dataset.setter
+    # def dataset(self):
+    #     if self._dataset.url != "" or self._dataset != None:
+    #         return self._dataset
+    #     else:
+    #         return self._infer_shared_dataset(self._dataset)
 
     def _register_dataset(self) -> None:
         registry = self.registry

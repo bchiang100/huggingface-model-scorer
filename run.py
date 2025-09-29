@@ -65,6 +65,7 @@ def test() -> None:
     print(f"Tests completed. {successful_tests}/{total_tests} tests passed. {successful_tests/total_tests*100:.2f}% line coverage.")
 
 def run(url_file:str) -> None:
+    print("========== Running Calculations... ==========")
     p = UrlParser(url_file)
     for x in p.model_asset_groups:
         start = time.perf_counter()
@@ -136,12 +137,13 @@ def run(url_file:str) -> None:
 
         output_results(list(results))
 
+    print("========== Finished Running Calculations! ==========")
+
 
 def main() -> None:
     argparser = argparse.ArgumentParser(description="Hugging Face Model Scorer -- install, run or test.")
     argparser.add_argument(
         'action', 
-        choices=['install', 'test'], 
         help="Command to execute: install, run, or test."
     )
     args = argparser.parse_args()
@@ -149,10 +151,8 @@ def main() -> None:
         install()
     elif args.action == 'test':
         test()
-    elif type(args.action) == str and pathlib.Path(args.action).is_file():
-        run(args.action)
     else:
-        print("Invalid action. Use 'install', 'test', or provide a valid URL file path.")
+        run(args.action)
 
 if __name__ == "__main__":
     main()
