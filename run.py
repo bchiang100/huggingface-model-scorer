@@ -1,9 +1,9 @@
+
 import argparse
 import logging
 import sys
 import pathlib
 import subprocess
-import dotenv
 import time
 from src.output.ndjson_formatter import output_results
 from src.metrics import (
@@ -38,8 +38,6 @@ all_tests = [
     test_ramp_up.run,
 ]
 
-dotenv.load_dotenv()
-
 def install() -> None:
     print("Installing dependencies from requirements.txt...")
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
@@ -50,6 +48,8 @@ def install() -> None:
     print("You can now run the script with: ./run <URL_FILE>")
 
 def test() -> None:
+    import dotenv
+    dotenv.load_dotenv()
     successful_tests = 0
     total_tests = len(all_tests)
     print(f"Total tests to run: {total_tests}")
@@ -64,6 +64,8 @@ def test() -> None:
     print(f"Tests completed. {successful_tests}/{total_tests} tests passed. {successful_tests/total_tests*100:.2f}% line coverage.")
 
 def run(url_file:str) -> None:
+    import dotenv
+    dotenv.load_dotenv()
     print("========== Running Calculations... ==========")
     p = UrlParser(url_file)
     log_path: str = os.getenv("LOG_FILE")
