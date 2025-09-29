@@ -26,39 +26,95 @@ class CodeQuality(Metric):
         self.max_days_old = max_days_old
 
     def calculate(self) -> float:
+        import signal
+        import os
+
         start_time = time.time()
+        timeout_seconds = 15
+
+        # Track which analyses completed successfully
+        function_score = None
+        style_score = None
+        recency_score = None
+        violations = 0
+        days_old = 999
+        repo = None
+
+        def timeout_handler(_signum, _frame):
+            raise TimeoutError("Code quality calculation timed out after 15 seconds")
+
         try:
+            if os.name != 'nt':  # Not Windows
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(timeout_seconds)
+
             with tempfile.TemporaryDirectory() as temp_dir:
-                repo = self._clone_repository(self.url, temp_dir)
+                try:
+                    repo = self._clone_repository(self.url, temp_dir)
+                except:
+                    pass  # Continue with analysis even if clone fails
 
-                # Analyze what we have, even if clone timed out or was partial
-                function_score = self._analyze_function_lengths(temp_dir)
-                style_score, violations = self._analyze_code_style(temp_dir)
+                # Try each analysis step, only store real results
+                try:
+                    function_score = self._analyze_function_lengths(temp_dir)
+                except:
+                    pass
 
-                # If repo is None (timeout with no partial data), use default recency score
-                if repo is not None:
-                    recency_score, days_old = self._analyze_repository_recency(repo)
-                else:
-                    recency_score, days_old = 0.5, 999  # neutral score for unknown recency
+                try:
+                    style_score, violations = self._analyze_code_style(temp_dir)
+                except:
+                    pass
 
-                final_score = self._calculate_weighted_score(
+                try:
+                    if repo is not None:
+                        recency_score, days_old = self._analyze_repository_recency(repo)
+                except:
+                    pass
+
+                # Calculates final score using only completed analyses
+                final_score = self._calculate_partial_weighted_score(
                     function_score, style_score, recency_score
                 )
 
-                self.function_length_score = function_score
-                self.style_score = style_score
-                self.recency_score = recency_score
-                self.total_functions = self._count_total_functions(temp_dir)
+                self.function_length_score = function_score if function_score is not None else 0.5
+                self.style_score = style_score if style_score is not None else 0.5
+                self.recency_score = recency_score if recency_score is not None else 0.5
+                self.total_functions = self._count_total_functions(temp_dir) if temp_dir else 0
                 self.style_violations = violations
                 self.days_since_last_commit = days_old
+
+                if os.name != 'nt':
+                    signal.alarm(0)  # Cancel the alarm
 
                 self.latency = int((time.time() - start_time) * 1000)
                 self.score = max(0.0, min(1.0, final_score))
                 return self.score
 
-        except Exception:
+        except TimeoutError:
+            # Timeout occurred - return with whatever scores were actually calculated
+            if os.name != 'nt':
+                signal.alarm(0)
+
+            final_score = self._calculate_partial_weighted_score(
+                function_score, style_score, recency_score
+            )
+
+            self.function_length_score = function_score if function_score is not None else 0.5
+            self.style_score = style_score if style_score is not None else 0.5
+            self.recency_score = recency_score if recency_score is not None else 0.5
+            self.total_functions = 0
+            self.style_violations = violations
+            self.days_since_last_commit = days_old
+
             self.latency = int((time.time() - start_time) * 1000)
-            self.score = 0.1
+            self.score = max(0.0, min(1.0, final_score))
+            return self.score
+
+        except Exception:
+            if os.name != 'nt':
+                signal.alarm(0)
+            self.latency = int((time.time() - start_time) * 1000)
+            self.score = 0.5
             return self.score
 
     def _clone_repository(self, repo_url: str, temp_dir: str, timeout: int = 5) -> Optional[Repo]:
@@ -133,7 +189,6 @@ class CodeQuality(Metric):
             except (SyntaxError, UnicodeDecodeError, FileNotFoundError):
                 continue
 
-        # neutral score if no functions are detected
         if total_functions == 0:
             return 0.5
 
@@ -195,10 +250,32 @@ class CodeQuality(Metric):
 
     def _calculate_weighted_score(self, function_score: float, style_score: float,
                                  recency_score: float) -> float:
-
-        # weights: function length 40%, style 40%, recency 20%
-        
         return (function_score * 0.4) + (style_score * 0.4) + (recency_score * 0.2)
+
+    def _calculate_partial_weighted_score(self, function_score, style_score, recency_score) -> float:
+        completed_analyses = []
+        total_weight = 0
+        weighted_sum = 0
+
+        if function_score is not None:
+            completed_analyses.append(('function', function_score, 0.4))
+            total_weight += 0.4
+            weighted_sum += function_score * 0.4
+
+        if style_score is not None:
+            completed_analyses.append(('style', style_score, 0.4))
+            total_weight += 0.4
+            weighted_sum += style_score * 0.4
+
+        if recency_score is not None:
+            completed_analyses.append(('recency', recency_score, 0.2))
+            total_weight += 0.2
+            weighted_sum += recency_score * 0.2
+
+        if total_weight == 0:
+            return 0.5
+
+        return weighted_sum / total_weight
 
     def _count_total_functions(self, repo_path: str) -> int:
         # counts total number of functions in the repo
