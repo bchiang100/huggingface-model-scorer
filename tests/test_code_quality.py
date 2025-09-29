@@ -99,6 +99,9 @@ def test_code_quality():
         except Exception as e:
             print(f"  Error: {e}")
 
+def run():
+    test_code_quality()
+
 
 if __name__ == "__main__":
     test_code_quality()

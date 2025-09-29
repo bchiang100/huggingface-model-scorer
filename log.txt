@@ -1,0 +1,3 @@
+INFO - 2025-09-28 23:38:24,055 - Final code quality score obtained
+INFO - 2025-09-28 23:38:24,672 - Exception raised when finding code quality
+INFO - 2025-09-28 23:38:26,282 - Successfully determined bus factor score

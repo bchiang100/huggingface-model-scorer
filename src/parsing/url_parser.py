@@ -3,17 +3,16 @@ from parsing.url_base import *
 import regex as re
 
 class UrlParser():
-    def __init__ (self, file):
+    def __init__ (self, file:str) -> None:
         try:
             with open(file, 'r') as f:
                 self.model_asset_groups: list[ModelAssets] = self.extract_models(f)
         except IOError as e:
             print(f"Failed to open URL file: {e}")
-            raise
         
     def extract_models(self, file) -> list[ModelAssets]:
         model_asset_group = []        
-        for line in self.file:
+        for line in file:
             urls = line.strip('\n').split(',')
             model = Model(urls.pop() if self.validate_url(urls[-1]) else None)
             dataset = Dataset(urls.pop() if self.validate_url(urls[-1]) else None)
@@ -33,7 +32,7 @@ class UrlParser():
 
 
 if __name__ == "__main__":
-    parser = UrlParser(os.path.join(os.path.dirname(__file__), 'example.txt'))
+    parser = UrlParser(os.path.join(os.path.dirname(__file__), './example.txt'))
     print([x.model.url for x in parser.model_asset_groups])
     print([x.dataset.url for x in parser.model_asset_groups])
     print([x.codebase.url for x in parser.model_asset_groups])

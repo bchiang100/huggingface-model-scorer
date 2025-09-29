@@ -1,11 +1,11 @@
 # Run: python3 -m test.test_performance_claims
 # Run: pip install -e if in venv
 
-from src.metrics.performance_claims import PerformanceClaimsScore
-from src.parsing.url_base import Model
+from metrics.size import SizeScore
+from parsing.url_base import Model
 import time
 
-if __name__ == "__main__":
+def test() -> None:
     test_urls = [
         "https://huggingface.co/tencent/HunyuanImage-2.1",
         "https://huggingface.co/driaforall/mem-agent", 
@@ -14,8 +14,6 @@ if __name__ == "__main__":
         "https://huggingface.co/bytedance-research/HuMo"
     ]
     
-    print("=" * 50)
-    
     for url in test_urls:
         print(f"\nTesting URL: {url}")
         
@@ -23,22 +21,22 @@ if __name__ == "__main__":
         
         # Create Model object and performance scorer
         model = Model(url)
-        performance_scorer = PerformanceClaimsScore(model)
+        size_scorer = SizeScore(model)
         
         # Calculate score
-        score = performance_scorer.calculate()
+        score = size_scorer.calculate()
         
         total_latency = int((time.time() - start_time) * 1000)
         
-        print(f"Performance Claims Score: {score:.3f}")
-        print(f"Analysis Latency: {performance_scorer.latency} milliseconds")
-        print(f"Total Latency (including README fetch): {total_latency} milliseconds")
+        print(f"Size Score: {score:.3f}")
+        print(f"Analysis Latency: {size_scorer.latency} milliseconds")
         
-        if performance_scorer.llm_analysis and performance_scorer.llm_analysis.get('reasoning'):
-            print(f"LLM Analysis: {performance_scorer.llm_analysis['reasoning']}")
-        else:
-            print("LLM Analysis: Not available")
         
         print("-" * 30)
     
-    print("\nPerformanceClaimsScore testing ran successfully")
+    print("\nSize scoring testing ran successfully")
+
+def run() -> None:
+    test()
+if __name__ == "__main__":
+    run()
