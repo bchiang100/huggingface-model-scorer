@@ -3,10 +3,12 @@ import argparse
 import logging
 import sys
 import pathlib
+import os
 import subprocess
 import time
+from typing import Literal
 from src.output.ndjson_formatter import output_results
-from src.metrics import (
+from metrics import (
     busfactor,
     code_quality,
     dataset_quality,
@@ -14,7 +16,7 @@ from src.metrics import (
     license,
     performance_claims,
     ramp_up,
-    size
+    # size
 )
 from src.parsing.url_base import *
 from src.parsing.url_parser import UrlParser
@@ -26,6 +28,7 @@ from tests import (
     test_license, 
     test_performance_claims, 
     test_ramp_up,
+    # test_size
     )
 
 all_tests = [
@@ -36,6 +39,7 @@ all_tests = [
     test_license.run,
     test_performance_claims.run,
     test_ramp_up.run,
+    # test_size.run
 ]
 
 def install() -> None:
@@ -99,14 +103,14 @@ def run(url_file:str) -> None:
     for x in p.model_asset_groups:
         start = time.perf_counter()
         netscore = 0.0 
-        cqc = 0.0
-        bfc = 0.0
-        dqd = 0.0
-        lsm = 0.0
-        szm = 0.0
-        psm = 0.0 
-        bfm = 0.0
-        rum = 0.0
+        cqc = None
+        bfc = None
+        dqd = None
+        lsm = None
+        szm = None
+        psm = None 
+        bfm = None
+        rum = None
 
         if c := x.codebase:
             cqc = code_quality.CodeQuality(c)
@@ -120,18 +124,18 @@ def run(url_file:str) -> None:
 
         if m := x.model:
             lsm = license.License(m)
-            szm = size.SizeScore(m)
+            # szm = size.SizeScore(m)
             psm = performance_claims.PerformanceClaimsScore(m)
             bfm = busfactor.BusFactorMetric(m)
             rum = ramp_up.RampUpScore(m)
             lsm.calculate()
-            szm.calculate()
+            # szm.calculate()
             psm.calculate()
             bfm.calculate()
             rum.calculate()
 
         end = time.perf_counter()
-        netscore = 0.25 * dqd.score + 0.1 * cqc.score + 0.2 * lsm.score + 0.2 * rum.score + 0.1 * szm.score + 0.1 * psm.score + 0.05 * (bfc.score + bfm.score )/2
+        netscore = 0.25 * dqd.score + 0.1 * cqc.score + 0.2 * lsm.score + 0.2 * rum.score + 0.1 * 0 + 0.1 * psm.score + 0.05 * (bfc.score + bfm.score )/2
         netscore_lat = end - start
 
         code_and_data = 1 if cqc.score and dqd.score else (0.5 if bool(cqc.score) ^ bool(dqd.score) else 0)
@@ -149,13 +153,13 @@ def run(url_file:str) -> None:
             "performance_claims_latency": psm.latency ,
             "license": lsm.score,
             "license_latency": lsm.latency,
-            "size_score": (szm.score , {
+            "size_score": (0 , {
                 "raspberry_pi": 0.0,
                 "jetson_nano": 0.0,
                 "desktop_pc": 0.0,
                 "aws_server": 0.0
             }),
-            "size_score_latency": szm.latency,
+            "size_score_latency": 0,
             "dataset_and_code_score": code_and_data ,
             "dataset_and_code_score_latency": 0,
             "dataset_quality": dqd.score,
