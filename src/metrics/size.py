@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Literal
 from huggingface_hub import HfApi, ModelInfo
 import time
@@ -15,6 +16,7 @@ HARDWARE_SIZE_LIMITS: Dict[HardwareType, int] = {
 
 class SizeScore(Metric):
 
+    # Finds weighted sum of hardware scores to be used for net score
     def calculate(self) -> float:
         start_time: float = time.time()
         _ = self.score_model_size()
@@ -23,6 +25,7 @@ class SizeScore(Metric):
 
         self.score = score 
         self.latency = int((time.time() - start_time) * 1000)
+        logging.info("Determined overall size score")
         return score 
 
 
@@ -41,12 +44,14 @@ class SizeScore(Metric):
             return 1.0 - (excess / max_size_mb)
 
 
+    # Uses huggingface api to determine model size
     def get_model_size_mb(self) -> float:
         model_id = self.asset_id
         api: HfApi = HfApi()
         info: ModelInfo = api.model_info(model_id)
         
         total_bytes: int = sum(s.size for s in info.siblings if s.size is not None)
+        logging.debug("Determined model size")
         return total_bytes / 1_000_000  # bytes to MB
 
 
@@ -65,4 +70,5 @@ class SizeScore(Metric):
 
         self.scores = hardware_scores
 
+        logging.debug("Determined hardware dependent size scores")
         return hardware_scores

@@ -23,6 +23,7 @@ class BusFactorMetric(Metric):
         r = self._distribution_function(commit_map)
         self.latency = (time.perf_counter() - start_time) * 1000
         self.score = r
+        logging.info("Successfully determined bus factor score")
         return r
 
     def _get_commit_map(self) -> dict: 
@@ -35,6 +36,7 @@ class BusFactorMetric(Metric):
                 commits[x["commit"]["author"]["name"]] = commits.get(x["commit"]["author"]["name"], 0) + 1
         else:
             raise ValueError("Unsupported asset type for commit map extraction.")
+        logging.debug("Bus factor: Commit map successfully obtained")
         return commits if commits else None
     
     def _get_github_commits(self, url:str) -> list:
@@ -51,6 +53,7 @@ class BusFactorMetric(Metric):
                 break
             commits.extend(data)
             page+=1
+        logging.debug("Bus factor: Github commits obtained")
         return commits
     
     def _get_huggingface_commits(self, url:str) -> list:

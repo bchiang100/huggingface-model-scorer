@@ -10,6 +10,7 @@
 # 3. Access the "score" attribute for the calculated score (0.0-1.0)
 # 4. Use provided DEBUG print statements to track LLM output
 #  ---------------------------------------------------------------------------------
+import logging
 import re
 import os
 import requests
@@ -28,7 +29,7 @@ class License(Metric):
         """
             Setup environment variable for PurdueGenAI Studio API key
         """
-        api_key = os.getenv('PURDUE_GENAI_API_KEY')
+        api_key = os.getenv('GEN_AI_STUDIO_API_KEY')
         if not api_key:
             return False
             
@@ -50,9 +51,10 @@ class License(Metric):
             
             # setup PurdueGenAI Studio and perform LLM analysis
             if not self._setup_purdue_genai():
-                raise ValueError("PurdueGenAI Studio API key not found. Set PURDUE_GENAI_API_KEY environment variable.")
+                raise ValueError("PurdueGenAI Studio API key not found. Set GEN_AI_STUDIO_API_KEY environment variable.")
 
             result = self._analyze_with_llm(readme_content)
+            logging.debug("Succesfully analyzed license with LLM")
             # print(f"DEBUG: LLM extracted license score: {result['license_score']}")
             # print(f"DEBUG: LLM extracted license name: {result['license_name']}")
             # print(f"DEBUG: LLM extracted license confidence: {result['confidence']}")
@@ -60,6 +62,7 @@ class License(Metric):
             
         except Exception as e:
             print(f"Error extracting license from README: {e}")
+            logging.info("Failed to analyze license with LLM")
             raise
         
         if result['license_name'] == 'Unknown':
@@ -78,6 +81,7 @@ class License(Metric):
         try:
             return ReadmeParser.fetch_readme(self.url)
         except Exception as e:
+            logging.info("Unable to fetch README")
             print(f"Error fetching README: {e}")
             return None
         

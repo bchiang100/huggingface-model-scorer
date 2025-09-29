@@ -6,6 +6,7 @@
 #  ---------------------------------------------------------------------------------
 
 import ast
+import logging
 import subprocess
 import tempfile
 from typing import Optional
@@ -13,7 +14,7 @@ from datetime import datetime
 import time
 from pathlib import Path
 import git
-from git import Repo
+from git import Commit, Repo
 from metrics.base import Metric
 
 
@@ -48,11 +49,13 @@ class CodeQuality(Metric):
 
                 self.latency = int((time.time() - start_time) * 1000)
                 self.score = max(0.0, min(1.0, final_score))
+                logging.debug("Code quality score determined")
                 return self.score
 
         except Exception:
             self.latency = int((time.time() - start_time) * 1000)
             self.score = 0.1
+            logging.info("Exception raised when finding code quality")
             return self.score
 
     def _clone_repository(self, repo_url: str, temp_dir: str) -> Repo:
@@ -65,6 +68,7 @@ class CodeQuality(Metric):
             except git.exc.GitCommandError:
                 return Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True)
         except Exception:
+            logging.info("Failed to clone repository")
             raise ValueError(f"Failed to clone repository: {repo_url}")
 
     def _analyze_function_lengths(self, repo_path: str) -> float:
@@ -98,6 +102,7 @@ class CodeQuality(Metric):
             return 0.5
 
         good_functions = total_functions - long_functions
+        logging.debug("Determined function length ratio")
         return good_functions / total_functions
 
     def _analyze_code_style(self, repo_path: str) -> tuple:
@@ -127,19 +132,21 @@ class CodeQuality(Metric):
             violation_rate = violations / total_lines
             style_score = max(0.0, 1.0 - (violation_rate * 10))
 
+            logging.debug("Flake8 runs on file successful")
             return style_score, violations
 
         except (subprocess.TimeoutExpired, FileNotFoundError):
+            logging.debug("Flake8 runs on file failed")
             return 0.5, 0
 
     def _analyze_repository_recency(self, repo: Repo) -> tuple:
         # scores based on how recently the repository was updated.
        
         try:
-            latest_commit = next(repo.iter_commits(max_count=1))
-            commit_date = datetime.fromtimestamp(latest_commit.committed_date)
+            latest_commit: Commit = next(repo.iter_commits(max_count=1))
+            commit_date: datetime = datetime.fromtimestamp(latest_commit.committed_date)
 
-            days_old = (datetime.now() - commit_date).days
+            days_old: int = (datetime.now() - commit_date).days
 
             if days_old <= 0:
                 recency_score = 1.0
@@ -148,6 +155,7 @@ class CodeQuality(Metric):
             else:
                 recency_score = 1.0 - (days_old / self.max_days_old)
 
+            logging.debug("Recency score for code quality obtained")
             return recency_score, days_old
 
         except Exception:
@@ -158,6 +166,7 @@ class CodeQuality(Metric):
 
         # weights: function length 40%, style 40%, recency 20%
         
+        logging.info("Final code quality score obtained")
         return (function_score * 0.4) + (style_score * 0.4) + (recency_score * 0.2)
 
     def _count_total_functions(self, repo_path: str) -> int:

@@ -11,6 +11,7 @@
 # 4. Check "llm_analysis" attribute for detailed LLM breakdown
 #  ---------------------------------------------------------------------------------
 
+import logging
 import time
 import os
 import json
@@ -31,7 +32,7 @@ class PerformanceClaimsScore(Metric):
         
     def _setup_purdue_genai(self) -> bool:
         # setup environment variable for PurdueGenAI Studio API key
-        api_key = os.getenv('PURDUE_GENAI_API_KEY')
+        api_key = os.getenv('GEN_AI_STUDIO_API_KEY')
         if not api_key:
             return False
             
@@ -49,15 +50,17 @@ class PerformanceClaimsScore(Metric):
             
             # setup PurdueGenAI Studio and perform LLM analysis
             if not self._setup_purdue_genai():
-                raise ValueError("PurdueGenAI Studio API key not found. Set PURDUE_GENAI_API_KEY environment variable.")
+                raise ValueError("PurdueGenAI Studio API key not found. Set GEN_AI_STUDIO_API_KEY environment variable.")
                 
             performance_score = self._analyze_with_llm(readme_content)
 
             self.latency = int((time.time() - start_time) * 1000)
             self.score = max(0.0, min(1.0, performance_score))
+            logging.debug("Successfully determined performance score")
             return self.score
             
         except Exception:
+            logging.info("Unable to determine performance score")
             self.latency = int((time.time() - start_time) * 1000)
             raise
             

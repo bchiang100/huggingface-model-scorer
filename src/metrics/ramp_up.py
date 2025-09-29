@@ -7,6 +7,7 @@
 # How to use: Instantiate RampUpScore with README content and access the "score" attribute. Instantiating the object will automatically calculate the score.
 #  ---------------------------------------------------------------------------------
 
+import logging
 import time
 from typing import Optional
 from metrics.base import *
@@ -30,9 +31,11 @@ class RampUpScore(Metric):
 
             self.latency = int((time.time() - start_time) * 1000)
             self.score = max(0, min(1.0, ramp_up_score))
+            logging.info("Successfully determined ramp up score")
             return self.score
             
         except Exception:
+            logging.info("Failed to determine ramp up score")
             self.latency = int((time.time() - start_time) * 1000)
             return 0.0
             
@@ -51,6 +54,7 @@ class RampUpScore(Metric):
             
             return None
         except Exception:
+            logging.debug("Unable to fetch readme")
             return None
         
         
@@ -145,6 +149,7 @@ class RampUpScore(Metric):
             signatures_score = max(0.1, min(0.4, signature_score))
 
             score += signatures_score
+            logging.debug("Instruction ramp-up score found")
             return min(1.0, score)
     
     def _analyze_documentation_quality(self, readme: str) -> float:
@@ -196,6 +201,7 @@ class RampUpScore(Metric):
         elif length < 100:
             score -= -0.4
         
+        logging.debug("Documentation ramp-up score found")
         return min(1.0, score)
     
         
@@ -262,4 +268,5 @@ class RampUpScore(Metric):
         
         score -= min(0.4, total_penalty)
 
+        logging.debug("Dependencies ramp-up score found")
         return min(1.0, score)

@@ -1,3 +1,4 @@
+import logging
 import re
 import os
 import requests
@@ -15,7 +16,7 @@ class Documentation(Metric):
         """
             Setup environment variable for PurdueGenAI Studio API key
         """
-        api_key = os.getenv('PURDUE_GENAI_API_KEY')
+        api_key = os.getenv('GEN_AI_STUDIO_API_KEY')
         if not api_key:
             return False
             
@@ -36,12 +37,14 @@ class Documentation(Metric):
                 raise ValueError("PurdueGenAI Studio API key not found. Set PURDUE_GENAI_API_KEY environment variable.")
 
             result = self._analyze_with_llm(readme_content)
+            logging.debug(f"Determined documentation score for {self.url}")
             # print(f"DEBUG: LLM extracted documentation score: {result['documentation_score']}")
             # # print(f"DEBUG: LLM extracted category scores: {result['category_scores']}")
             # print(f"DEBUG: LLM extracted confidence: {result['confidence']}")
             # print(f"DEBUG: LLM extracted rationale: {result['rationale']}")
             
         except Exception as e:
+            logging.info(f"Unable to determine documentation score for {self.url}")
             print(f"Error extracting documentation score from README: {e}")
             raise
 

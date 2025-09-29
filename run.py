@@ -1,4 +1,5 @@
 import argparse
+import logging
 import sys
 import pathlib
 import subprocess
@@ -25,7 +26,6 @@ from tests import (
     test_license, 
     test_performance_claims, 
     test_ramp_up,
-    test_size
     )
 
 all_tests = [
@@ -36,7 +36,6 @@ all_tests = [
     test_license.run,
     test_performance_claims.run,
     test_ramp_up.run,
-    test_size.run
 ]
 
 dotenv.load_dotenv()
@@ -67,6 +66,34 @@ def test() -> None:
 def run(url_file:str) -> None:
     print("========== Running Calculations... ==========")
     p = UrlParser(url_file)
+    log_path: str = os.getenv("LOG_FILE")
+
+    if log_path == None: 
+        print(f"ERROR: The LOG_FILE environment variable does not exist")
+        sys.exit(1)
+
+    if not os.path.exists(log_path):
+        print(f"ERROR: The file at location {log_path} does not exist.")
+        sys.exit(1)
+    
+    log_level_number: int = int(os.getenv("LOG_LEVEL"))
+    if log_level_number == None: 
+        print(f"ERROR: The LOG_LEVEL environment variable does not exist")
+        sys.exit(1)
+    
+    if log_level_number > 2 or log_level_number < 0: 
+        print(f"ERROR: The LOG_LEVEL environment variable value is invalid")
+        sys.exit(1)
+
+    log_level: Literal[40] = logging.ERROR # logging level 0, no messages in the log
+
+    if log_level_number == 1: 
+        log_level = logging.INFO # level 1, informational messages
+
+    if log_level_number == 2: 
+        log_level = logging.DEBUG # level 2, debug messages
+
+    logging.basicConfig(level=log_level, format= '%(levelname)s - %(asctime)s - %(message)s', filename=log_path, filemode='w')
     for x in p.model_asset_groups:
         start = time.perf_counter()
         netscore = 0.0 

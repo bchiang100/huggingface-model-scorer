@@ -30,6 +30,7 @@ class DatasetQualityMetric(Metric):
         r = self._analyze_dataset(self._fetch_dataset())
         self.latency = (time.perf_counter() - start_time) * 1000
         self.score = r
+        logging.debug("Obtained dataset quality score")
         return r
 
     def _validate_input(self) -> bool:
@@ -37,6 +38,7 @@ class DatasetQualityMetric(Metric):
             raise ValueError("DatasetQualityMetric can only be applied to Dataset assets.")
         if 'huggingface.co' not in self.url:
             raise ValueError("DatasetQualityMetric can only be applied to Hugging Face datasets.")
+        logging.debug("Input validated for dataset")
         return True
 
     def _fetch_dataset(self) -> pd.DataFrame:
@@ -52,7 +54,9 @@ class DatasetQualityMetric(Metric):
                 # No configs available
                 print("No configs available, loading default dataset")
                 ds = load_dataset(f"{self.owner}/{self.asset_id}", split = "train",streaming=True)
+            logging.debug("Successfully loaded dataset")
         except Exception as e:
+            logging.info("Failed to load dataset")
             raise RuntimeError(f"Failed to load dataset '{f"{self.owner}/{self.asset_id}"}': {e}")
 
         data_list = list(islice(ds, 10000))
