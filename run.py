@@ -1,7 +1,7 @@
-
 import argparse
 import logging
 import sys
+import os 
 import pathlib
 import subprocess
 import time
@@ -39,6 +39,9 @@ all_tests = [
 ]
 
 def install() -> None:
+    script_dir: str = os.path.dirname(os.path.abspath(__file__))
+    src_path: str = os.path.join(script_dir, 'src')
+    sys.path.insert(0, src_path)
     print("Installing dependencies from requirements.txt...")
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
     print("Dependencies installed.")
