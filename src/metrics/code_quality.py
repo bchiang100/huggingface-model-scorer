@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 import git
 from git import Repo
-from metrics.metrics_base import Metric
+from metrics.base import Metric
 
 
 class CodeQuality(Metric):
@@ -31,9 +31,15 @@ class CodeQuality(Metric):
             with tempfile.TemporaryDirectory() as temp_dir:
                 repo = self._clone_repository(self.url, temp_dir)
 
+                # Analyze what we have, even if clone timed out or was partial
                 function_score = self._analyze_function_lengths(temp_dir)
                 style_score, violations = self._analyze_code_style(temp_dir)
-                recency_score, days_old = self._analyze_repository_recency(repo)
+
+                # If repo is None (timeout with no partial data), use default recency score
+                if repo is not None:
+                    recency_score, days_old = self._analyze_repository_recency(repo)
+                else:
+                    recency_score, days_old = 0.5, 999  # neutral score for unknown recency
 
                 final_score = self._calculate_weighted_score(
                     function_score, style_score, recency_score
@@ -55,16 +61,45 @@ class CodeQuality(Metric):
             self.score = 0.1
             return self.score
 
-    def _clone_repository(self, repo_url: str, temp_dir: str) -> Repo:
-        # clone repo using GitPython library
+    def _clone_repository(self, repo_url: str, temp_dir: str, timeout: int = 5) -> Optional[Repo]:
+        # clone repo using GitPython library with timeout
+        import signal
+        import os
+
+        def timeout_handler(_signum, _frame):
+            raise TimeoutError("Repository cloning timed out")
+
         try:
-            return Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True, branch='main') # main branch
-        except git.exc.GitCommandError:
+            if os.name != 'nt': # not Windows based
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(timeout)
+
             try:
-                return Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True, branch='master') # fallback to master
+                repo = Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True, branch='main')
             except git.exc.GitCommandError:
-                return Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True)
+                try:
+                    repo = Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True, branch='master')
+                except git.exc.GitCommandError:
+                    repo = Repo.clone_from(repo_url, temp_dir, depth=1, single_branch=True)
+
+            if os.name != 'nt':
+                signal.alarm(0)  # Cancel the alarm
+
+            return repo
+
+        except TimeoutError:
+            if os.name != 'nt':
+                signal.alarm(0)
+            # Check if partial clone exists
+            if os.path.exists(temp_dir) and os.listdir(temp_dir):
+                try:
+                    return Repo(temp_dir)
+                except:
+                    return None
+            return None
         except Exception:
+            if os.name != 'nt':
+                signal.alarm(0)
             raise ValueError(f"Failed to clone repository: {repo_url}")
 
     def _analyze_function_lengths(self, repo_path: str) -> float:
@@ -72,6 +107,11 @@ class CodeQuality(Metric):
         python_files = list(Path(repo_path).rglob("*.py"))
         if not python_files:
             return 0.5
+
+        # Sample files if too many to speed up analysis
+        if len(python_files) > 50:
+            import random
+            python_files = random.sample(python_files, 50)
 
         total_functions = 0
         long_functions = 0
@@ -163,6 +203,12 @@ class CodeQuality(Metric):
     def _count_total_functions(self, repo_path: str) -> int:
         # counts total number of functions in the repo
         python_files = list(Path(repo_path).rglob("*.py"))
+
+        # Sample files if too many to speed up analysis
+        if len(python_files) > 50:
+            import random
+            python_files = random.sample(python_files, 50)
+
         total_functions = 0
 
         for file_path in python_files:
@@ -183,6 +229,11 @@ class CodeQuality(Metric):
     def _count_python_lines(self, repo_path: str) -> int:
         # counts total lines of Python code
         python_files = list(Path(repo_path).rglob("*.py"))
+
+        if len(python_files) > 50:
+            import random
+            python_files = random.sample(python_files, 50)
+
         total_lines = 0
 
         for file_path in python_files:
