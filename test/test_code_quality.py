@@ -1,6 +1,6 @@
 
 # Run: PYTHONPATH=src python3 test/test_code_quality.py
-# Optional: Add GITHUB_TOKEN=your_token to .env file for API features
+
 from metrics.code_quality import CodeQuality
 
 
