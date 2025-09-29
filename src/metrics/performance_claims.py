@@ -11,11 +11,15 @@
 # 4. Check "llm_analysis" attribute for detailed LLM breakdown
 #  ---------------------------------------------------------------------------------
 
+import logging
+import sys
 import time
 import os
 import json
 import re
 from typing import Optional, Dict, Any
+
+from regex import Match
 from metrics.metrics_base import *
 
 import requests
@@ -30,43 +34,46 @@ class PerformanceClaimsScore(Metric):
         self.api_key = None
         
     def _setup_purdue_genai(self) -> bool:
-        # setup environment variable for PurdueGenAI Studio API key
-        api_key = os.getenv('PURDUE_GENAI_API_KEY')
+        """
+            Setup environment variable for PurdueGenAI Studio API key
+        """
+        api_key: str = os.getenv('GEN_AI_STUDIO_API_KEY')
         if not api_key:
-            return False
+            logging.debug("Unable to obtain Purdue GenAI Studio API key")
+            print("ERROR: Unable to obtain Purdue GenAI Studio API key")
+            sys.exit(1)
             
-        self.api_key = api_key
+        self.api_key: str = api_key
+        logging.debug("Obtained Purdue GenAI Studio API key")
         return True
 
     def calculate(self) -> float:
         start_time = time.time()
-        try:
-            # Get README content from the asset
-            readme_content = self._get_readme_content()
-            if not readme_content:
-                self.latency = int((time.time() - start_time) * 1000)
-                return 0.0
-            
-            # setup PurdueGenAI Studio and perform LLM analysis
-            if not self._setup_purdue_genai():
-                raise ValueError("PurdueGenAI Studio API key not found. Set PURDUE_GENAI_API_KEY environment variable.")
-                
-            performance_score = self._analyze_with_llm(readme_content)
+        readme_content: str = self._get_readme_content()
+        if not readme_content: 
+            logging.debug(f"Unable to find README for {self.URL}")
+            print(f"ERROR: unable to find README content for {self.url}")
+            sys.exit(1)
 
-            self.latency = int((time.time() - start_time) * 1000)
-            self.score = max(0.0, min(1.0, performance_score))
-            return self.score
-            
-        except Exception:
-            self.latency = int((time.time() - start_time) * 1000)
-            raise
-            
+        if not self._setup_purdue_genai():
+            logging.debug("PurdueGenAI Studio API key not found. Set GEN_AI_STUDIO_API_KEY environment variable.")
+            print("PurdueGenAI Studio API key not found. Set GEN_AI_STUDIO_API_KEY environment variable.")
+            sys.exit(1)
+
+        performance_score = self._analyze_with_llm(readme_content)
+
+        self.latency = int((time.time() - start_time) * 1000)
+        self.score = max(0.0, min(1.0, performance_score))
+        logging.info("Determined performance claims score using LLM")
+        return self.score
+
     def _get_readme_content(self) -> Optional[str]:
         """
         Fetch README content from the model repository
         """
         try:
             if self.asset_type.__name__ != 'Model':
+                logging.info(f"Current asset is not a model ({self.url})")
                 return None
                 
             # For HuggingFace models, try to get README from model card
@@ -78,6 +85,7 @@ class PerformanceClaimsScore(Metric):
             
             return None
         except Exception:
+            logging.info(f"Unable to analyze README from model for performance claims ({self.url})")
             return None
 
     def _analyze_with_llm(self, readme: str) -> float:
@@ -105,7 +113,9 @@ class PerformanceClaimsScore(Metric):
             response = requests.post(url, headers=headers, json=body)
             
             if response.status_code != 200:
-                raise Exception(f"PurdueGenAI API Error: {response.status_code}, {response.text}")
+                print(f"ERROR: PurdueGenAI API Error: {response.status_code}, {response.text}")
+                logging.info(f"ERROR: PurdueGenAI API Error: {response.status_code}, {response.text}")
+                sys.exit(1)
             
             response_data = response.json()
             analysis_text = response_data['choices'][0]['message']['content']
@@ -140,23 +150,21 @@ Respond in this exact JSON format. Do not deviate from this format. Do not retur
 }}"""
     
     def _parse_llm_response(self, response_text: str) -> float:
-        # calculates overall score based on LLM analysis
-        try:
-            # Try to extract JSON from response
-            json_match = re.search(r'\{[^{}]*\}', response_text, re.DOTALL)
-            if not json_match:
-                self.llm_analysis = None
-                return 0.0
-            
-            analysis = json.loads(json_match.group())
-            self.llm_analysis = analysis
-            
-            score = (
-                float(analysis.get('benchmark_presence', 0)) * 0.40 + float(analysis.get('benchmark_quality', 0)) * 0.30 + float(analysis.get('score_credibility', 0)) * 0.20 + float(analysis.get('reproducibility', 0)) * 0.10
-            )
- 
-            return score
-            
-        except Exception:
+        # Try to extract JSON from response
+        json_match: Match[str] = re.search(r'\{[^{}]*\}', response_text, re.DOTALL)
+        if not json_match:
             self.llm_analysis = None
+            logging.info(f"Failed to generate proper LLM response for performance of {self.url}")
             return 0.0
+            
+        
+        analysis = json.loads(json_match.group())
+        self.llm_analysis = analysis
+        
+        score = (
+            float(analysis.get('benchmark_presence', 0)) * 0.40 + float(analysis.get('benchmark_quality', 0)) * 0.30 + float(analysis.get('score_credibility', 0)) * 0.20 + float(analysis.get('reproducibility', 0)) * 0.10
+        )
+        logging.debug(f"Successfully parsed LLM response for performance of {self.url}")
+
+        return score
+            

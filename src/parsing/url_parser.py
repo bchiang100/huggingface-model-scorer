@@ -13,7 +13,7 @@ class UrlParser():
         
     def extract_models(self, file) -> list[ModelAssets]:
         model_asset_group = []        
-        for line in self.file:
+        for line in file:
             urls = line.strip('\n').split(',')
             model = Model(urls.pop() if self.validate_url(urls[-1]) else None)
             dataset = Dataset(urls.pop() if self.validate_url(urls[-1]) else None)

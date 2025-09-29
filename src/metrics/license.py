@@ -11,9 +11,15 @@
 # 4. Use provided DEBUG print statements to track LLM output
 #  ---------------------------------------------------------------------------------
 
+import json
+import logging
+import sys
+import time
 import re
 import os
+from regex import Match
 import requests
+from huggingface_hub import HfApi
 
 from metrics.metrics_base import *
 from parsing.readme_parser import ReadmeParser
@@ -28,47 +34,47 @@ class License(Metric):
         """
             Setup environment variable for PurdueGenAI Studio API key
         """
-        api_key = os.getenv('PURDUE_GENAI_API_KEY')
+        api_key: str = os.getenv('GEN_AI_STUDIO_API_KEY')
         if not api_key:
-            return False
+            logging.debug("Unable to obtain Purdue GenAI Studio API key")
+            print("ERROR: Unable to obtain Purdue GenAI Studio API key")
+            sys.exit(1)
             
-        self.api_key = api_key
+        self.api_key: str = api_key
+        logging.debug("Obtained Purdue GenAI Studio API key")
         return True
+    
     
     def calculate(self) -> float:
         """
             Returns a license score (0-1) based on license clarity and permissiveness.
         """
-        import time
+        start_time: float = time.time()
 
-        start_time = time.time()
-        try:
-            # Get README content from the asset
-            readme_content = self._get_readme_content()
-            if not readme_content:
-                raise ValueError("README content not found.")
-            
-            # setup PurdueGenAI Studio and perform LLM analysis
-            if not self._setup_purdue_genai():
-                raise ValueError("PurdueGenAI Studio API key not found. Set PURDUE_GENAI_API_KEY environment variable.")
+        # Get README content from the asset
+        readme_content: str = ReadmeParser.fetch_readme(self.url)
+        if not readme_content:
+            logging.debug(f"Unable to find README for {self.URL}")
+            print(f"ERROR: unable to find README content for {self.url}")
+            sys.exit(1)
+        
+        # setup PurdueGenAI Studio and perform LLM analysis
+        if not self._setup_purdue_genai():
+            logging.debug("PurdueGenAI Studio API key not found. Set GEN_AI_STUDIO_API_KEY environment variable.")
+            print("PurdueGenAI Studio API key not found. Set GEN_AI_STUDIO_API_KEY environment variable.")
+            sys.exit(1)
 
-            result = self._analyze_with_llm(readme_content)
-            # print(f"DEBUG: LLM extracted license score: {result['license_score']}")
-            # print(f"DEBUG: LLM extracted license name: {result['license_name']}")
-            # print(f"DEBUG: LLM extracted license confidence: {result['confidence']}")
-            # print(f"DEBUG: LLM extracted license rationale: {result['rationale']}")
-            
-        except Exception as e:
-            print(f"Error extracting license from README: {e}")
-            raise
+        result: Dict[str, Any] = self._analyze_with_llm(readme_content)
+        logging.debug(f"Successful README analysis via LLM for {self.url}")
         
         if result['license_name'] == 'Unknown':
-            # print(f"DEBUG: Using fallback analysis.")
+            logging.debug("Using fallback analysis for license; unable to find LLM response")
             self._fallbackScore()
         else:
-            self.score = float(result['license_score'])
+            logging.debug("Successfully used LLM to analyze README for license")
+            self.score: float = float(result['license_score'])
 
-        self.latency = int((time.time() - start_time) * 1000)
+        self.latency: int = int((time.time() - start_time) * 1000)
         return self.score
     
     def _get_readme_content(self) -> Optional[str]:
@@ -85,38 +91,36 @@ class License(Metric):
         """
             Analyzes README content with scenario specific prompt. Returns
             a Dict containing relevant metrics.
-        """
-        try:  
-            prompt = self._create_prompt(readme)
-            
-            # calls PurdueGenAI Studio API
-            url = "https://genai.rcac.purdue.edu/api/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json" 
-            }
-            body = {
-                "model": "llama3.1:latest",
-                "messages": [
-                    {"role": "system", "content": "You are an AI assistant that analyzes software licenses for compatibility with LGPLv2.1."},
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.1, # controls randomness in model's output
-                "max_tokens": 1000, # sets max number of tokens model can generate in response
-                "stream": False # gets full response at once. do not print intermediate results
-            }
-            
-            response = requests.post(url, headers=headers, json=body)
-            
-            if response.status_code != 200:
-                raise Exception(f"PurdueGenAI API Error: {response.status_code}, {response.text}")
-            
-            response_data = response.json()
-            analysis_text = response_data['choices'][0]['message']['content']
-            return self._parse_llm_response(analysis_text)
-            
-        except Exception as e:
-            raise RuntimeError(f"LLM analysis failed: {str(e)}")
+        """ 
+        prompt: str = self._create_prompt(readme)
+        
+        # calls PurdueGenAI Studio API
+        url: str = "https://genai.rcac.purdue.edu/api/chat/completions"
+        headers: dict[str, str] = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json" 
+        }
+        body: dict[str, Any] = {
+            "model": "llama3.1:latest",
+            "messages": [
+                {"role": "system", "content": "You are an AI assistant that analyzes README for how well documentation."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.1, # controls randomness in model's output
+            "max_tokens": 1000, # sets max number of tokens model can generate in response
+            "stream": False # gets full response at once. do not print intermediate results
+        }
+        
+        response: Any = requests.post(url, headers=headers, json=body)
+        
+        if response.status_code != 200:
+            print(f"ERROR: PurdueGenAI API Error: {response.status_code}, {response.text}")
+            logging.info(f"ERROR: PurdueGenAI API Error: {response.status_code}, {response.text}")
+            sys.exit(1)
+        
+        response_data: Any = response.json()
+        analysis_text: Any = response_data['choices'][0]['message']['content']
+        return self._parse_llm_response(analysis_text)
 
     def _create_prompt(self, readme: str) -> str:    
         return f"""
@@ -161,19 +165,16 @@ Now analyze the README and provide your response in the required JSON format.
         """
             Parses LLM response_text into returned Dict.
         """
-        try:
-            import json
-
             # Try to extract JSON from response
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            if json_match:
-                return json.loads(json_match.group())
-            else:
-                return {"license_score": 0.0, "license_name": "Parse Error", "confidence": 0.0, "rationale": "Failed to parse LLM response"}
-            
-        except Exception:
+        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if json_match:
+            logging.debug(f"Successfully parsed LLM response for documentation of {self.url}")
+            return json.loads(json_match.group())
+        else:
+            logging.info(f"Failed to generate proper LLM response for documentation of {self.url}")
             self.llm_analysis = None
-            return 0.0
+            return {"license_score": 0.0, "license_name": "Parse Error", "confidence": 0.0, "rationale": "Failed to parse LLM response"}
+            
 
 #   ==========================
 #   Fallback Analysis (using direct model card mapping)
@@ -183,8 +184,9 @@ Now analyze the README and provide your response in the required JSON format.
         """
             Fallback: Calculates score using license mapping from model card.
         """
-        license_name = self._fallbackGetLicense()
+        license_name: str = self._fallbackGetLicense()
         if not license_name:
+            logging.info(f"Unable to retrieve license of {self.url}")
             return 0.0
 
         license = license_name.lower()
@@ -217,21 +219,22 @@ Now analyze the README and provide your response in the required JSON format.
                 self.score = score
                 break
 
+        logging.info(f"Successful fallback license analysis for {self.url}")
         return self.score
     
     def _fallbackGetLicense(self) -> str:
         """
             Fallback: Returns license extracted from HuggingFace API
         """
-        from huggingface_hub import HfApi
 
         # extract model_id from the site.url
         # Example: https://huggingface.co/google/gemma-3-270m/tree/main
-        model_id = None
-        match = re.search(r"huggingface\.co/([^/]+/[^/]+|[^/]+)", self.url)
+        model_id: str = None
+        match: Match[str] = re.search(r"huggingface\.co/([^/]+/[^/]+|[^/]+)", self.url)
         if match:
             model_id = match.group(1)
         if not model_id:
+            logging.info(f"Unable to find model id from url for {self.url}")
             return None
         
 
@@ -242,9 +245,10 @@ Now analyze the README and provide your response in the required JSON format.
             # print(info)
         except Exception as e:
             print(f"Error fetching model info: {e}")
+            logging.info(f"Unable to find model information for {self.url}")
             return None
 
-        license = None
+        license: Any = None
         # license is usually stored in info.card_data
         if getattr(info, "card_data", None):
             # card_data might be a dataclass or dict-like
@@ -255,4 +259,5 @@ Now analyze the README and provide your response in the required JSON format.
             # fallback: check top-level fields
             license = getattr(info, "license", None) or (info.get("license") if hasattr(info, "get") else None)
         
+        logging.debug(f"Fallback license obtained for {self.url}")
         return license

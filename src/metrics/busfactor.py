@@ -1,8 +1,10 @@
+import sys
 from metrics.metrics_base import *
 from parsing.url_base import Model
 import numpy as np
 import requests
 import urllib.parse
+import logging
 
 from dotenv import load_dotenv
 # load_dotenv()
@@ -16,7 +18,9 @@ class BusFactorMetric(Metric):
         Returns a float between 0 and 1, where 0 is low risk (many contributors) and 1 is high risk (few contributors)
         '''
         commit_map = self._get_commit_map()
-        return self._distribution_function(commit_map)
+        score = self._distribution_function(commit_map)
+        logging.info("Obtained bus factor score")
+        return score
 
     def _get_commit_map(self) -> dict: 
         commits = dict()
@@ -28,7 +32,10 @@ class BusFactorMetric(Metric):
             for x in self._get_github_commits(self.api_endpoint + '/commits'):
                 commits[x["commit"]["author"]["name"]] = commits.get(x["commit"]["author"]["name"], 0) + 1
         else:
-            raise ValueError("Unsupported asset type for commit map extraction.")
+            logging.info("Could not obtain commit map for bus factor calculation")
+            print("Unsupported asset type for commit map extraction.")
+            sys.exit(1)
+        logging.debug("Created commit map for determining shannon entropy for bus factor")
         return commits if commits else None
     
     def _get_github_commits(self, url):
@@ -43,13 +50,9 @@ class BusFactorMetric(Metric):
             if not data:
                 break
             commits.extend(data)
+        logging.info("Obtained Github commits for Bus Factor")
         return commits
     
-    def _get_huggingface_commits(self, url):
-        '''
-        Get the commits from a huggingface repo or dataset using the huggingface api
-        '''
-        pass
 
     def _distribution_function(self,commit_map: dict) -> float:
         '''
@@ -62,6 +65,7 @@ class BusFactorMetric(Metric):
         for x in commit_map.values():
             H -= x/N * np.log2(x/N)
         H_norm = H/H_max
+        logging.debug("Determined shannon entropy for commit distribution")
         return H_norm
 
 if __name__ == "__main__":

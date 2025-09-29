@@ -7,6 +7,9 @@
 # How to use: Instantiate RampUpScore with README content and access the "score" attribute. Instantiating the object will automatically calculate the score.
 #  ---------------------------------------------------------------------------------
 
+import logging
+import requests
+import sys
 import time
 from typing import Optional
 from metrics.metrics_base import *
@@ -14,27 +17,25 @@ from metrics.metrics_base import *
 class RampUpScore(Metric):
     def calculate(self) -> float:
         start_time = time.time()
-        try:
-            # Get README content from the asset
-            readme_content = self._get_readme_content()
-            if not readme_content:
-                self.latency = int((time.time() - start_time) * 1000)
-                return 0.0
-            
-            doc_quality = self._analyze_documentation_quality(readme_content)
-            instr_quality = self._analyze_instruction_quality(readme_content)
-            ramp_up_score = (doc_quality * 0.40) + (instr_quality * 0.60)
-            if (ramp_up_score >= 0.5):
-                dependencies = self._analyze_dependencies(readme_content)
-                ramp_up_score += (dependencies * 0.1)
+        # Get README content from the asset
+        readme_content = self._get_readme_content()
+        if not readme_content:
+            logging.debug(f"Unable to find README for {self.URL}")
+            print(f"ERROR: unable to find README content for {self.url}")
+            sys.exit(1)
+        
+        doc_quality: float = self._analyze_documentation_quality(readme_content)
+        instr_quality: float = self._analyze_instruction_quality(readme_content)
+        ramp_up_score: float = (doc_quality * 0.40) + (instr_quality * 0.60)
+        if (ramp_up_score >= 0.5):
+            dependencies: float = self._analyze_dependencies(readme_content)
+            ramp_up_score += (dependencies * 0.1)
 
-            self.latency = int((time.time() - start_time) * 1000)
-            self.score = max(0, min(1.0, ramp_up_score))
-            return self.score
+        self.latency = int((time.time() - start_time) * 1000)
+        self.score = max(0, min(1.0, ramp_up_score))
+        logging.info(f"Determined ramp up score for {self.url}")
+        return self.score
             
-        except Exception:
-            self.latency = int((time.time() - start_time) * 1000)
-            return 0.0
             
     def _get_readme_content(self) -> Optional[str]:
         """
@@ -43,8 +44,7 @@ class RampUpScore(Metric):
         try:
             # For HuggingFace models, try to get README from model card
             if 'huggingface.co' in self.url:
-                readme_url = f"{self.url}/raw/main/README.md"
-                import requests
+                readme_url: str = f"{self.url}/raw/main/README.md"
                 response = requests.get(readme_url)
                 if response.status_code == 200:
                     return response.text
@@ -58,10 +58,10 @@ class RampUpScore(Metric):
             # Calculates documentation quality based on installation keywords
             if not readme:
                 return 0.0
-            readme_lower = readme.lower()
-            score = 0.0
+            readme_lower: str = readme.lower()
+            score: str = 0.0
 
-            installation_weights = {
+            installation_weights: dict[str, float] = {
                 "usage": 0.30,
                 "installation": 0.25,
                 "requirements": 0.15,
@@ -81,8 +81,8 @@ class RampUpScore(Metric):
                 "environment": 0.03
             }
             
-            installation_score = 0
-            found_install = []
+            installation_score: float = 0
+            found_install: list = []
             for keyword, weight in installation_weights.items():
                 if keyword in readme_lower:
                     installation_score += weight
@@ -145,6 +145,7 @@ class RampUpScore(Metric):
             signatures_score = max(0.1, min(0.4, signature_score))
 
             score += signatures_score
+            logging.debug(f"Analyzed instructions in README for {self.url}")
             return min(1.0, score)
     
     def _analyze_documentation_quality(self, readme: str) -> float:
@@ -196,6 +197,7 @@ class RampUpScore(Metric):
         elif length < 100:
             score -= -0.4
         
+        logging.debug(f"Analyzed documentation for ramp up in README for {self.url}")
         return min(1.0, score)
     
         
@@ -262,4 +264,5 @@ class RampUpScore(Metric):
         
         score -= min(0.4, total_penalty)
 
+        logging.debug(f"Analyzed dependencies in README for {self.url}")
         return min(1.0, score)
