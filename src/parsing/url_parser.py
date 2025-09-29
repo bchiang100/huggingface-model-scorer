@@ -3,13 +3,12 @@ from parsing.url_base import *
 import regex as re
 
 class UrlParser():
-    def __init__ (self, file):
+    def __init__ (self, file:str) -> None:
         try:
             with open(file, 'r') as f:
                 self.model_asset_groups: list[ModelAssets] = self.extract_models(f)
         except IOError as e:
             print(f"Failed to open URL file: {e}")
-            raise
         
     def extract_models(self, file) -> list[ModelAssets]:
         model_asset_group = []        
