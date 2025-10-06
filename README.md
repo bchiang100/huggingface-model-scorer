@@ -8,19 +8,27 @@ Parin Timbadia
 
 # Why
 
-To score HuggingFace models based on riskiness associated with the model, based on the following metrics
+To score HuggingFace models based on riskiness associated with the model, based on the following metrics.
+
+## Repository Structure
+
+src contains the source code, which has the following modules
+- Parsing -> Class defintions of UrlParser, which parses the URL file into a group of the model assets.
+- Metrics -> Class definition of metrics type, which enables calculation of latency and actual implemented metrics.
+- Output  -> Contains NDJSON output formatting.
+- Parallel-> N/A
 
 ## Metrics
-  - Bus Factor          -> Risk associated with knowledge distribution by the creators of a creation, like Github repo contributors or Model contributors
-  - Code Quality        -> Risk associated with how good code is, judged by an LLM
-  - Dataset Quality     -> Risk associated with how good dataset quality is, calculated by various factors like consistency and missing value coverage
+  - Bus Factor          -> Risk associated with knowledge distribution by the creators of a creation, like Github repo contributors or Model contributors.
+  - Code Quality        -> Risk associated with how good code is, judged by an LLM.
+  - Dataset Quality     -> Risk associated with how good dataset quality is, calculated by various factors like consistency and missing value coverage.
   - Documentation Score -> Risk associated with how thorough a repository's documentation quality is.
-  - License             -> Risk associated with whether a license exists
-  - Performance Claims  -> Risk associated with whether the performance claims made are backed by real evidence
-  - Ramp Up Score       -> Risk associated with how quickly a new person could learn the asset based on whether or not it has proper documentation or such
-  - Size                -> Risk associated with how large a dataset is, which matters for different hardware that is being used
-  - Net Score           -> Weighted sum of all the scores that summarizes how risky a model is
-  - Code or Dataset     -> Whether code or dataset exists
+  - License             -> Risk associated with whether a license exists.
+  - Performance Claims  -> Risk associated with whether the performance claims made are backed by real evidence.
+  - Ramp Up Score       -> Risk associated with how quickly a new person could learn the asset based on whether or not it has proper documentation or such.
+  - Size                -> Risk associated with how large a dataset is, which matters for different hardware that is being used.
+  - Net Score           -> Weighted sum of all the scores that summarizes how risky a model is.
+  - Code or Dataset     -> Whether code or dataset exists.
 
 ## System Diagram
 
