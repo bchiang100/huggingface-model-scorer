@@ -1,10 +1,10 @@
 # huggingface-model-scorer
 
 ## Authors
-Daniel Wu
-Evan Zhang
-Bryan Chiang
-Parin Timbadia
+- Daniel Wu-
+- Evan Zhang
+- Bryan Chiang
+- Parin Timbadia
 
 # Why
 
