@@ -12,11 +12,15 @@ To score HuggingFace models based on riskiness associated with the model, based 
 
 ## Repository Structure
 
-src contains the source code, which has the following modules
+### src 
+a root level directory that contains the source code, which has the following modules
 - Parsing -> Class defintions of UrlParser, which parses the URL file into a group of the model assets.
 - Metrics -> Class definition of metrics type, which enables calculation of latency and actual implemented metrics.
 - Output  -> Contains NDJSON output formatting.
 - Parallel-> N/A
+
+### tests 
+a root level directory containing system module tests, primarily the metrics.
 
 ## Metrics
   - Bus Factor          -> Risk associated with knowledge distribution by the creators of a creation, like Github repo contributors or Model contributors.
